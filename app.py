@@ -767,7 +767,7 @@ def show_analytics_reports():
         st.metric("Security Score", f"{metrics['security_score']:.1f}/10", delta=f"{metrics['score_trend']:+.1f}")
     
     with col4:
-        st.metric("Threat Volume", metrics['threat_volume'], delta=f"{metrics['volume_trend']:+d}")
+        st.metric("Threat Volume", metrics['threat_volume'], delta=f"{int(metrics['volume_trend']):+d}")
     
     with col5:
         st.metric("False Positive Rate", f"{metrics['false_positive_rate']:.1%}", delta=f"{metrics['fp_trend']:+.1%}")
