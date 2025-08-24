@@ -46,20 +46,42 @@ def main():
     st.title("🛡️ AI-Powered Cybersecurity Threat Detection System")
     st.markdown("### Comprehensive Multi-Environment Security Monitoring & Response")
     
-    # Sidebar navigation
-    st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox("Select Module", [
+    # Sidebar navigation with organized sections
+    st.sidebar.title("🛡️ Security Center")
+    
+    # Main sections
+    st.sidebar.markdown("### 📊 **Dashboard & Monitoring**")
+    monitoring_options = [
         "🏠 Dashboard Overview",
         "🎯 Real-Time Threat Detection",
-        "📊 Alert Management",
+        "📊 Alert Management"
+    ]
+    
+    st.sidebar.markdown("### 🔍 **Analysis & Investigation**")
+    analysis_options = [
         "🔍 Log Analysis",
+        "📈 Analytics & Reports"
+    ]
+    
+    st.sidebar.markdown("### 🛡️ **Protection Systems**")
+    protection_options = [
         "🌐 Network Security",
         "💻 Endpoint Protection",
-        "📱 IoT & Mobile Security",
+        "📱 IoT & Mobile Security"
+    ]
+    
+    st.sidebar.markdown("### ⚔️ **Testing & Configuration**")
+    testing_options = [
         "⚔️ Attack Simulation",
-        "📈 Analytics & Reports",
         "⚙️ System Configuration"
-    ])
+    ]
+    
+    # Combine all options for the selectbox
+    all_options = monitoring_options + analysis_options + protection_options + testing_options
+    
+    # Module selection
+    st.sidebar.markdown("---")
+    page = st.sidebar.selectbox("**Select Security Module:**", all_options, key="module_selector")
     
     # Real-time monitoring toggle
     if st.sidebar.checkbox("Enable Real-Time Monitoring"):
@@ -128,13 +150,23 @@ def show_dashboard_overview():
     with col2:
         # Alert timeline
         alerts_timeline = st.session_state.alert_manager.get_alerts_timeline()
-        if alerts_timeline:
+        if alerts_timeline and alerts_timeline['timestamps'] and alerts_timeline['counts']:
+            # Create DataFrame for plotly
+            df_timeline = pd.DataFrame({
+                'timestamps': alerts_timeline['timestamps'],
+                'counts': alerts_timeline['counts']
+            })
             fig = px.line(
-                x=alerts_timeline['timestamps'],
-                y=alerts_timeline['counts'],
-                title="Alerts Over Time (Last 24h)"
+                df_timeline,
+                x='timestamps',
+                y='counts',
+                title="Alerts Over Time (Last 24h)",
+                markers=True
             )
+            fig.update_layout(showlegend=False)
             st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("📈 No alert timeline data available yet")
     
     # Recent threats table
     st.subheader("🔍 Recent Threat Activity")
@@ -861,6 +893,7 @@ def show_attack_simulation():
         }
         
         selected_category = st.selectbox("Select Attack Category", list(simulation_types.keys()))
+        selected_attack = None
         
         if selected_category:
             st.write(f"**Description**: {simulation_types[selected_category]['description']}")
@@ -890,6 +923,10 @@ def show_attack_simulation():
                 st.error("Please acknowledge the risks before proceeding without safe mode")
                 return
         
+        if not selected_attack:
+            st.error("Please select an attack type before starting simulation")
+            return
+            
         with st.spinner(f"Running {selected_attack} simulation..."):
             simulation_results = st.session_state.attack_simulator.run_simulation(
                 category=selected_category,

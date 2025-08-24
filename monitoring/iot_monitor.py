@@ -699,3 +699,17 @@ class IoTMonitor:
     def _generate_mac_address(self) -> str:
         """Generate random MAC address"""
         return ':'.join([f'{random.randint(0, 255):02x}' for _ in range(6)])
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get current IoT monitoring status"""
+        total_devices = len(self.iot_devices)
+        vulnerable_devices = len([d for d in self.iot_devices 
+                                if d.get('security_status') in ['vulnerable', 'critical']])
+        
+        return {
+            'devices': total_devices,
+            'vulnerable_devices': vulnerable_devices,
+            'monitoring_active': self.monitoring_active,
+            'compliant_devices': len([d for d in self.iot_devices 
+                                    if d.get('compliance_status') == 'Compliant'])
+        }

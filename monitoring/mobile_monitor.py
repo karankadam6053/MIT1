@@ -742,3 +742,17 @@ class MobileMonitor:
         # Keep only recent threats (last 24 hours)
         cutoff_time = datetime.now() - timedelta(hours=24)
         self.threat_feed = [t for t in self.threat_feed if t['timestamp'] > cutoff_time]
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get current mobile device monitoring status"""
+        total_devices = len(self.mobile_devices)
+        compliant_devices = len([d for d in self.mobile_devices 
+                               if d.get('compliance_status') == 'compliant'])
+        
+        return {
+            'devices': total_devices,
+            'compliant_devices': compliant_devices,
+            'monitoring_active': self.monitoring_active,
+            'policy_violations': len([d for d in self.mobile_devices 
+                                    if d.get('policy_violations', [])])
+        }

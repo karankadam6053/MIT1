@@ -608,3 +608,13 @@ class EndpointMonitor:
     def _generate_mac_address(self) -> str:
         """Generate random MAC address"""
         return ':'.join([f'{random.randint(0, 255):02x}' for _ in range(6)])
+    
+    def get_status(self) -> Dict[str, Any]:
+        """Get current endpoint protection status"""
+        stats = self.get_endpoint_statistics()
+        return {
+            'protected': stats['protected'],
+            'quarantined': stats['quarantined'],
+            'total_endpoints': stats['total_endpoints'],
+            'threats_detected': stats['threats_detected']
+        }
