@@ -7,6 +7,7 @@ dependencies = [
     "ipaddress>=1.0.23",
     "joblib>=1.5.1",
     "numpy>=2.3.2",
+    "openai>=1.101.0",
     "pandas>=2.3.2",
     "plotly>=6.3.0",
     "psutil>=7.0.0",
