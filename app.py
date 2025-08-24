@@ -14,6 +14,7 @@ from core.log_analyzer import LogAnalyzer
 from core.alert_manager import AlertManager
 from simulation.attack_simulator import AttackSimulator
 from monitoring.network_monitor import NetworkMonitor
+from monitoring.website_monitor import WebsiteMonitor
 # Removed endpoint, IoT, and mobile monitoring modules as requested
 from utils.data_processor import DataProcessor
 from utils.threat_intelligence import ThreatIntelligence
@@ -34,6 +35,7 @@ if 'threat_engine' not in st.session_state:
     st.session_state.alert_manager = AlertManager()
     st.session_state.attack_simulator = AttackSimulator()
     st.session_state.network_monitor = NetworkMonitor()
+    st.session_state.website_monitor = WebsiteMonitor()
     st.session_state.data_processor = DataProcessor()
     st.session_state.threat_intel = ThreatIntelligence()
 
@@ -68,6 +70,8 @@ def main():
     st.sidebar.markdown("### 🛡️ **Protection Systems**")
     if st.sidebar.button("🌐 Network Security", use_container_width=True):
         st.session_state.current_page = "🌐 Network Security"
+    if st.sidebar.button("🌍 Website Security", use_container_width=True):
+        st.session_state.current_page = "🌍 Website Security"
     
     # Testing & Configuration section
     st.sidebar.markdown("### ⚔️ **Testing & Configuration**")
@@ -96,6 +100,8 @@ def main():
         show_log_analysis()
     elif page == "🌐 Network Security":
         show_network_security()
+    elif page == "🌍 Website Security":
+        show_website_security()
     elif page == "⚔️ Attack Simulation":
         show_attack_simulation()
     elif page == "📈 Analytics & Reports":
@@ -576,6 +582,280 @@ def show_network_security():
             if ip_to_block:
                 st.session_state.network_monitor.block_ip(ip_to_block, reason)
                 st.success(f"IP {ip_to_block} blocked successfully")
+
+def show_website_security():
+    """Website security monitoring interface"""
+    st.header("🌍 Website Security Monitoring")
+    
+    # Website input section
+    st.subheader("🎯 Add Website to Monitor")
+    
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        website_url = st.text_input("Website URL", placeholder="https://example.com or example.com")
+    
+    with col2:
+        website_name = st.text_input("Display Name (Optional)", placeholder="My Website")
+    
+    with col3:
+        st.write("")  # Spacing
+        st.write("")
+        if st.button("➕ Add Website", use_container_width=True):
+            if website_url:
+                success = st.session_state.website_monitor.add_website(website_url, website_name)
+                if success:
+                    st.success(f"Website {website_url} added successfully!")
+                    st.rerun()
+                else:
+                    st.error("Failed to add website. Please check the URL format.")
+    
+    # Monitored websites section
+    monitored_sites = st.session_state.website_monitor.get_monitored_websites()
+    
+    if monitored_sites:
+        st.subheader("🔍 Monitored Websites")
+        
+        for url, site_info in monitored_sites.items():
+            with st.expander(f"🌐 {site_info['name']} ({url})"):
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.write(f"**Added**: {site_info['added'].strftime('%Y-%m-%d %H:%M')}")
+                    if site_info['last_scan']:
+                        st.write(f"**Last Scan**: {site_info['last_scan'].strftime('%Y-%m-%d %H:%M')}")
+                    else:
+                        st.write("**Last Scan**: Never")
+                
+                with col2:
+                    st.write(f"**Status**: {site_info['status'].title()}")
+                    
+                with col3:
+                    if st.button(f"🔍 Scan Now", key=f"scan_{url}"):
+                        with st.spinner("Scanning website..."):
+                            scan_results = st.session_state.website_monitor.scan_website(url)
+                            st.session_state.current_scan = scan_results
+                            st.success("Scan completed!")
+                            st.rerun()
+                    
+                    if st.button(f"🗑️ Remove", key=f"remove_{url}"):
+                        st.session_state.website_monitor.remove_website(url)
+                        st.success("Website removed!")
+                        st.rerun()
+    else:
+        st.info("No websites being monitored yet. Add a website above to get started.")
+    
+    # Display latest scan results
+    if hasattr(st.session_state, 'current_scan') and st.session_state.current_scan:
+        results = st.session_state.current_scan
+        
+        st.subheader("🔍 Latest Scan Results")
+        
+        # Security score and overview
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            score = results.get('security_score', 0)
+            score_color = "🟢" if score >= 80 else "🟡" if score >= 60 else "🔴"
+            st.metric("Security Score", f"{score:.1f}/100", delta=f"{score_color}")
+        
+        with col2:
+            availability = results.get('availability', {})
+            status = "🟢 Online" if availability.get('available') else "🔴 Offline"
+            st.metric("Availability", status)
+        
+        with col3:
+            ssl_info = results.get('ssl_security', {})
+            https_status = "🔒 HTTPS" if ssl_info.get('https_enabled') else "🔓 HTTP"
+            st.metric("SSL Status", https_status)
+        
+        with col4:
+            vulns = results.get('vulnerabilities', [])
+            vuln_count = len(vulns)
+            vuln_color = "🟢" if vuln_count == 0 else "🟡" if vuln_count <= 2 else "🔴"
+            st.metric("Vulnerabilities", f"{vuln_count} {vuln_color}")
+        
+        # Detailed analysis tabs
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔒 SSL/TLS", "🛡️ Security Headers", "📄 Content Analysis", "🚨 Vulnerabilities", "⚡ Performance"])
+        
+        with tab1:
+            ssl_security = results.get('ssl_security', {})
+            if ssl_security.get('https_enabled'):
+                st.success("✅ HTTPS is enabled")
+                
+                cert = ssl_security.get('certificate', {})
+                if cert:
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write("**Certificate Information:**")
+                        if cert.get('subject'):
+                            for key, value in cert['subject'].items():
+                                st.write(f"• {key}: {value}")
+                    
+                    with col2:
+                        st.write("**Certificate Details:**")
+                        if cert.get('expires'):
+                            st.write(f"• Expires: {cert['expires'][:10]}")
+                        if cert.get('days_until_expiry'):
+                            days = cert['days_until_expiry']
+                            color = "🟢" if days > 30 else "🟡" if days > 7 else "🔴"
+                            st.write(f"• Days until expiry: {days} {color}")
+                        
+                        st.write(f"• Security Level: {ssl_security.get('security_level', 'Unknown')}")
+                
+                issues = ssl_security.get('issues', [])
+                if issues:
+                    st.warning("SSL Issues found:")
+                    for issue in issues:
+                        st.write(f"• {issue}")
+            else:
+                st.error("❌ HTTPS is not enabled - website is vulnerable to man-in-the-middle attacks")
+        
+        with tab2:
+            headers = results.get('headers', {})
+            header_score = headers.get('security_score', 0)
+            
+            st.write(f"**Security Headers Score: {header_score}/100**")
+            
+            security_headers = headers.get('headers', {})
+            missing_headers = headers.get('missing_headers', [])
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Present Headers:**")
+                for header, value in security_headers.items():
+                    if value:
+                        st.success(f"✅ {header}")
+            
+            with col2:
+                if missing_headers:
+                    st.write("**Missing Headers:**")
+                    for header in missing_headers:
+                        st.error(f"❌ {header}")
+                
+            recommendations = headers.get('recommendations', [])
+            if recommendations:
+                st.write("**Recommendations:**")
+                for rec in recommendations:
+                    st.write(f"• {rec}")
+        
+        with tab3:
+            content = results.get('content_analysis', {})
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Content Statistics:**")
+                if content.get('text_length'):
+                    st.write(f"• Text content: {content['text_length']:,} characters")
+                if content.get('external_scripts'):
+                    st.write(f"• External scripts: {content['external_scripts']}")
+                if content.get('inline_scripts'):
+                    st.write(f"• Inline scripts: {content['inline_scripts']}")
+                if content.get('forms_count'):
+                    st.write(f"• Forms: {content['forms_count']}")
+            
+            with col2:
+                security_issues = content.get('security_issues', [])
+                if security_issues:
+                    st.write("**Security Issues:**")
+                    for issue in security_issues:
+                        st.warning(f"⚠️ {issue}")
+                else:
+                    st.success("✅ No content security issues detected")
+            
+            if content.get('content_preview'):
+                with st.expander("📄 Content Preview"):
+                    st.text(content['content_preview'])
+        
+        with tab4:
+            vulnerabilities = results.get('vulnerabilities', [])
+            
+            if vulnerabilities:
+                for vuln in vulnerabilities:
+                    severity_color = {
+                        'Critical': '🔴',
+                        'High': '🟠',
+                        'Medium': '🟡',
+                        'Low': '🟢'
+                    }.get(vuln.get('severity', 'Unknown'), '⚪')
+                    
+                    st.write(f"{severity_color} **{vuln.get('type', 'Unknown')}** - {vuln.get('severity', 'Unknown')}")
+                    st.write(f"Description: {vuln.get('description', 'N/A')}")
+                    if vuln.get('recommendation'):
+                        st.write(f"Recommendation: {vuln['recommendation']}")
+                    st.write("---")
+            else:
+                st.success("✅ No vulnerabilities detected")
+        
+        with tab5:
+            performance = results.get('performance', {})
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if performance.get('load_time'):
+                    st.metric("Load Time", f"{performance['load_time']:.0f}ms")
+                if performance.get('content_size'):
+                    st.metric("Content Size", f"{performance['content_size']:,} bytes")
+            
+            with col2:
+                if performance.get('performance_grade'):
+                    grade = performance['performance_grade']
+                    grade_color = "🟢" if grade in ['A', 'B'] else "🟡" if grade == 'C' else "🔴"
+                    st.metric("Performance Grade", f"{grade} {grade_color}")
+                
+                features = []
+                if performance.get('compression'):
+                    features.append("✅ Compression enabled")
+                else:
+                    features.append("❌ No compression")
+                
+                if performance.get('caching'):
+                    features.append("✅ Caching headers present")
+                else:
+                    features.append("❌ No caching headers")
+                
+                for feature in features:
+                    st.write(feature)
+    
+    # Scan history
+    if monitored_sites:
+        st.subheader("📊 Scan History & Trends")
+        
+        selected_site = st.selectbox("Select Website", list(monitored_sites.keys()))
+        
+        if selected_site:
+            trends = st.session_state.website_monitor.get_security_trends(selected_site)
+            
+            if 'error' not in trends:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    current_score = trends.get('current_score', 0)
+                    trend = trends.get('trend', 'stable')
+                    trend_emoji = "📈" if trend == 'improving' else "📉" if trend == 'declining' else "➡️"
+                    
+                    st.metric("Current Security Score", f"{current_score:.1f}/100", delta=f"{trend_emoji} {trend.title()}")
+                
+                with col2:
+                    scan_history = st.session_state.website_monitor.get_scan_history(selected_site)
+                    st.metric("Total Scans", len(scan_history))
+                
+                # Security score trend chart
+                if len(trends.get('scores', [])) > 1:
+                    fig = px.line(
+                        x=trends['timestamps'],
+                        y=trends['scores'],
+                        title="Security Score Trend",
+                        labels={'x': 'Scan Date', 'y': 'Security Score'}
+                    )
+                    fig.update_layout(showlegend=False)
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("Need at least 2 scans to show trends. Perform more scans to see historical data.")
 
 # Removed endpoint protection and IoT/mobile security modules as requested
 
