@@ -14,9 +14,7 @@ from core.log_analyzer import LogAnalyzer
 from core.alert_manager import AlertManager
 from simulation.attack_simulator import AttackSimulator
 from monitoring.network_monitor import NetworkMonitor
-from monitoring.endpoint_monitor import EndpointMonitor
-from monitoring.iot_monitor import IoTMonitor
-from monitoring.mobile_monitor import MobileMonitor
+# Removed endpoint, IoT, and mobile monitoring modules as requested
 from utils.data_processor import DataProcessor
 from utils.threat_intelligence import ThreatIntelligence
 
@@ -36,9 +34,6 @@ if 'threat_engine' not in st.session_state:
     st.session_state.alert_manager = AlertManager()
     st.session_state.attack_simulator = AttackSimulator()
     st.session_state.network_monitor = NetworkMonitor()
-    st.session_state.endpoint_monitor = EndpointMonitor()
-    st.session_state.iot_monitor = IoTMonitor()
-    st.session_state.mobile_monitor = MobileMonitor()
     st.session_state.data_processor = DataProcessor()
     st.session_state.threat_intel = ThreatIntelligence()
 
@@ -46,42 +41,43 @@ def main():
     st.title("🛡️ AI-Powered Cybersecurity Threat Detection System")
     st.markdown("### Comprehensive Multi-Environment Security Monitoring & Response")
     
-    # Sidebar navigation with organized sections
+    # Sidebar navigation with direct buttons
     st.sidebar.title("🛡️ Security Center")
     
-    # Main sections
+    # Initialize page selection
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "🏠 Dashboard Overview"
+    
+    # Dashboard & Monitoring section
     st.sidebar.markdown("### 📊 **Dashboard & Monitoring**")
-    monitoring_options = [
-        "🏠 Dashboard Overview",
-        "🎯 Real-Time Threat Detection",
-        "📊 Alert Management"
-    ]
+    if st.sidebar.button("🏠 Dashboard Overview", use_container_width=True):
+        st.session_state.current_page = "🏠 Dashboard Overview"
+    if st.sidebar.button("🎯 Real-Time Threat Detection", use_container_width=True):
+        st.session_state.current_page = "🎯 Real-Time Threat Detection"
+    if st.sidebar.button("📊 Alert Management", use_container_width=True):
+        st.session_state.current_page = "📊 Alert Management"
     
+    # Analysis & Investigation section
     st.sidebar.markdown("### 🔍 **Analysis & Investigation**")
-    analysis_options = [
-        "🔍 Log Analysis",
-        "📈 Analytics & Reports"
-    ]
+    if st.sidebar.button("🔍 Log Analysis", use_container_width=True):
+        st.session_state.current_page = "🔍 Log Analysis"
+    if st.sidebar.button("📈 Analytics & Reports", use_container_width=True):
+        st.session_state.current_page = "📈 Analytics & Reports"
     
+    # Protection Systems section
     st.sidebar.markdown("### 🛡️ **Protection Systems**")
-    protection_options = [
-        "🌐 Network Security",
-        "💻 Endpoint Protection",
-        "📱 IoT & Mobile Security"
-    ]
+    if st.sidebar.button("🌐 Network Security", use_container_width=True):
+        st.session_state.current_page = "🌐 Network Security"
     
+    # Testing & Configuration section
     st.sidebar.markdown("### ⚔️ **Testing & Configuration**")
-    testing_options = [
-        "⚔️ Attack Simulation",
-        "⚙️ System Configuration"
-    ]
+    if st.sidebar.button("⚔️ Attack Simulation", use_container_width=True):
+        st.session_state.current_page = "⚔️ Attack Simulation"
+    if st.sidebar.button("⚙️ System Configuration", use_container_width=True):
+        st.session_state.current_page = "⚙️ System Configuration"
     
-    # Combine all options for the selectbox
-    all_options = monitoring_options + analysis_options + protection_options + testing_options
-    
-    # Module selection
-    st.sidebar.markdown("---")
-    page = st.sidebar.selectbox("**Select Security Module:**", all_options, key="module_selector")
+    # Get current page
+    page = st.session_state.current_page
     
     # Real-time monitoring toggle
     if st.sidebar.checkbox("Enable Real-Time Monitoring"):
@@ -100,10 +96,6 @@ def main():
         show_log_analysis()
     elif page == "🌐 Network Security":
         show_network_security()
-    elif page == "💻 Endpoint Protection":
-        show_endpoint_protection()
-    elif page == "📱 IoT & Mobile Security":
-        show_iot_mobile_security()
     elif page == "⚔️ Attack Simulation":
         show_attack_simulation()
     elif page == "📈 Analytics & Reports":
@@ -176,28 +168,20 @@ def show_dashboard_overview():
     else:
         st.info("No active threats detected in the current timeframe.")
     
-    # Environment status
-    st.subheader("🌐 Multi-Environment Status")
+    # Network Security Status
+    st.subheader("🌐 Network Security Status")
     col1, col2, col3 = st.columns(3)
     
+    network_status = st.session_state.network_monitor.get_status()
+    
     with col1:
-        st.markdown("**Network Security**")
-        network_status = st.session_state.network_monitor.get_status()
         st.metric("Monitored Devices", network_status['devices'])
-        st.metric("Blocked IPs", network_status['blocked_ips'])
     
     with col2:
-        st.markdown("**Endpoint Protection**")
-        endpoint_status = st.session_state.endpoint_monitor.get_status()
-        st.metric("Protected Endpoints", endpoint_status['protected'])
-        st.metric("Quarantined Files", endpoint_status['quarantined'])
+        st.metric("Blocked IPs", network_status['blocked_ips'])
     
     with col3:
-        st.markdown("**IoT & Mobile**")
-        iot_status = st.session_state.iot_monitor.get_status()
-        mobile_status = st.session_state.mobile_monitor.get_status()
-        st.metric("IoT Devices", iot_status['devices'])
-        st.metric("Mobile Devices", mobile_status['devices'])
+        st.metric("Active Connections", network_status['total_connections'])
 
 def show_threat_detection():
     """Real-time threat detection interface"""
@@ -593,269 +577,7 @@ def show_network_security():
                 st.session_state.network_monitor.block_ip(ip_to_block, reason)
                 st.success(f"IP {ip_to_block} blocked successfully")
 
-def show_endpoint_protection():
-    """Endpoint protection interface"""
-    st.header("💻 Endpoint Protection & Management")
-    
-    # Endpoint overview
-    col1, col2, col3, col4 = st.columns(4)
-    
-    endpoint_stats = st.session_state.endpoint_monitor.get_endpoint_statistics()
-    
-    with col1:
-        st.metric("Protected Endpoints", endpoint_stats['protected'])
-    with col2:
-        st.metric("Threats Detected", endpoint_stats['threats_detected'])
-    with col3:
-        st.metric("Quarantined Files", endpoint_stats['quarantined'])
-    with col4:
-        st.metric("Compliance Score", f"{endpoint_stats['compliance_score']:.1%}")
-    
-    # Endpoint status grid
-    st.subheader("🖥️ Endpoint Status Overview")
-    
-    endpoints = st.session_state.endpoint_monitor.get_all_endpoints()
-    
-    if endpoints:
-        # Create status grid
-        cols = st.columns(4)
-        for i, endpoint in enumerate(endpoints):
-            with cols[i % 4]:
-                status_color = {
-                    'healthy': '🟢',
-                    'warning': '🟡', 
-                    'critical': '🔴',
-                    'offline': '⚫'
-                }.get(endpoint['status'], '⚪')
-                
-                st.markdown(f"""
-                **{endpoint['name']}** {status_color}
-                - OS: {endpoint['os']}
-                - Last Scan: {endpoint['last_scan']}
-                - Threats: {endpoint['threat_count']}
-                """)
-    
-    # Real-time scanning
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("🔍 Real-Time Endpoint Scanning")
-        
-        selected_endpoint = st.selectbox(
-            "Select Endpoint",
-            [ep['name'] for ep in endpoints] if endpoints else ["No endpoints available"]
-        )
-        
-        scan_type = st.selectbox(
-            "Scan Type",
-            ["Quick Scan", "Full System Scan", "Custom Scan", "Memory Scan"]
-        )
-        
-        if st.button("🚀 Start Scan"):
-            with st.spinner(f"Running {scan_type} on {selected_endpoint}..."):
-                scan_results = st.session_state.endpoint_monitor.run_scan(selected_endpoint, scan_type)
-                
-                if scan_results['threats_found']:
-                    st.warning(f"⚠️ {len(scan_results['threats_found'])} threats detected!")
-                    for threat in scan_results['threats_found']:
-                        st.write(f"**File**: {threat['file_path']}")
-                        st.write(f"**Threat Type**: {threat['type']}")
-                        st.write(f"**Action**: {threat['action_taken']}")
-                        st.write("---")
-                else:
-                    st.success("✅ No threats detected")
-    
-    with col2:
-        st.subheader("🛡️ Behavioral Analysis")
-        
-        behavior_data = st.session_state.endpoint_monitor.get_behavioral_analysis()
-        
-        if behavior_data:
-            st.write("**Suspicious Processes:**")
-            for process in behavior_data['suspicious_processes']:
-                st.write(f"• {process['name']} (PID: {process['pid']}) - Risk: {process['risk_score']:.1%}")
-            
-            st.write("**Unusual Network Connections:**")
-            for connection in behavior_data['network_anomalies']:
-                st.write(f"• {connection['process']} → {connection['destination']} - Risk: {connection['risk_score']:.1%}")
-    
-    # Malware analysis
-    st.subheader("🦠 Advanced Malware Analysis")
-    
-    uploaded_file = st.file_uploader("Upload file for analysis", type=['exe', 'dll', 'pdf', 'doc', 'zip'])
-    
-    if uploaded_file and st.button("🔬 Analyze File"):
-        with st.spinner("Analyzing file for malware..."):
-            analysis_results = st.session_state.endpoint_monitor.analyze_file(uploaded_file)
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write(f"**File**: {uploaded_file.name}")
-                st.write(f"**Size**: {len(uploaded_file.getvalue())} bytes")
-                st.write(f"**MD5**: {analysis_results['md5']}")
-                st.write(f"**SHA256**: {analysis_results['sha256']}")
-                st.write(f"**Threat Score**: {analysis_results['threat_score']:.1%}")
-            
-            with col2:
-                if analysis_results['is_malicious']:
-                    st.error("🚫 MALICIOUS FILE DETECTED!")
-                    st.write(f"**Threat Type**: {analysis_results['threat_type']}")
-                    st.write(f"**Family**: {analysis_results['malware_family']}")
-                else:
-                    st.success("✅ File appears to be clean")
-                
-                st.write("**Detection Engines:**")
-                for engine, result in analysis_results['engine_results'].items():
-                    status = "🔴 Detected" if result['detected'] else "🟢 Clean"
-                    st.write(f"• {engine}: {status}")
-
-def show_iot_mobile_security():
-    """IoT and mobile security interface"""
-    st.header("📱 IoT & Mobile Device Security")
-    
-    # Overview metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    iot_stats = st.session_state.iot_monitor.get_statistics()
-    mobile_stats = st.session_state.mobile_monitor.get_statistics()
-    
-    with col1:
-        st.metric("IoT Devices", iot_stats['total_devices'])
-    with col2:
-        st.metric("Mobile Devices", mobile_stats['total_devices'])
-    with col3:
-        st.metric("Vulnerable Devices", iot_stats['vulnerable'] + mobile_stats['vulnerable'])
-    with col4:
-        combined_score = (iot_stats['security_score'] + mobile_stats['security_score']) / 2
-        st.metric("Overall Security Score", f"{combined_score:.1f}/10")
-    
-    # IoT Security Section
-    st.subheader("🏠 IoT Device Security")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**Connected IoT Devices**")
-        iot_devices = st.session_state.iot_monitor.get_devices()
-        
-        if iot_devices:
-            for device in iot_devices:
-                status_emoji = {
-                    'secure': '🟢',
-                    'warning': '🟡',
-                    'vulnerable': '🔴',
-                    'unknown': '⚪'
-                }.get(device['security_status'], '⚪')
-                
-                with st.expander(f"{status_emoji} {device['name']} ({device['type']})"):
-                    st.write(f"**IP Address**: {device['ip']}")
-                    st.write(f"**Firmware**: {device['firmware_version']}")
-                    st.write(f"**Last Seen**: {device['last_seen']}")
-                    st.write(f"**Security Score**: {device['security_score']:.1f}/10")
-                    
-                    if device['vulnerabilities']:
-                        st.write("**Vulnerabilities:**")
-                        for vuln in device['vulnerabilities']:
-                            st.write(f"• {vuln['description']} (CVE: {vuln['cve']})")
-    
-    with col2:
-        st.write("**IoT Threat Detection**")
-        
-        if st.button("🔍 Scan IoT Network"):
-            with st.spinner("Scanning IoT devices for threats..."):
-                scan_results = st.session_state.iot_monitor.scan_for_threats()
-                
-                if scan_results['threats']:
-                    st.warning(f"⚠️ {len(scan_results['threats'])} IoT threats detected!")
-                    for threat in scan_results['threats']:
-                        st.write(f"**Device**: {threat['device_name']}")
-                        st.write(f"**Threat**: {threat['type']}")
-                        st.write(f"**Severity**: {threat['severity']}")
-                        st.write("---")
-                else:
-                    st.success("✅ No IoT threats detected")
-    
-    # Mobile Security Section
-    st.subheader("📱 Mobile Device Security")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**Managed Mobile Devices**")
-        mobile_devices = st.session_state.mobile_monitor.get_devices()
-        
-        if mobile_devices:
-            for device in mobile_devices:
-                status_emoji = {
-                    'compliant': '🟢',
-                    'non_compliant': '🟡',
-                    'compromised': '🔴',
-                    'unknown': '⚪'
-                }.get(device['compliance_status'], '⚪')
-                
-                with st.expander(f"{status_emoji} {device['name']} ({device['platform']})"):
-                    st.write(f"**User**: {device['user']}")
-                    st.write(f"**OS Version**: {device['os_version']}")
-                    st.write(f"**Last Check-in**: {device['last_checkin']}")
-                    st.write(f"**Jailbroken/Rooted**: {'Yes' if device['is_jailbroken'] else 'No'}")
-                    
-                    if device['installed_apps']:
-                        risky_apps = [app for app in device['installed_apps'] if app['risk_level'] == 'high']
-                        if risky_apps:
-                            st.write("**Risky Applications:**")
-                            for app in risky_apps:
-                                st.write(f"• {app['name']} - {app['risk_reason']}")
-    
-    with col2:
-        st.write("**Mobile Threat Protection**")
-        
-        # Mobile threat categories
-        threat_categories = [
-            "Malicious Apps",
-            "Phishing Attempts", 
-            "Network Attacks",
-            "Data Leakage",
-            "Device Compromise"
-        ]
-        
-        for category in threat_categories:
-            count = st.session_state.mobile_monitor.get_threat_count(category)
-            st.metric(category, count)
-        
-        if st.button("🛡️ Update Mobile Security Policies"):
-            st.session_state.mobile_monitor.update_security_policies()
-            st.success("Mobile security policies updated")
-    
-    # Device compliance dashboard
-    st.subheader("📋 Device Compliance Dashboard")
-    
-    compliance_data = {
-        'iot': st.session_state.iot_monitor.get_compliance_data(),
-        'mobile': st.session_state.mobile_monitor.get_compliance_data()
-    }
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # IoT compliance chart
-        if compliance_data['iot']:
-            fig = px.pie(
-                values=list(compliance_data['iot'].values()),
-                names=list(compliance_data['iot'].keys()),
-                title="IoT Device Compliance Status"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        # Mobile compliance chart  
-        if compliance_data['mobile']:
-            fig = px.pie(
-                values=list(compliance_data['mobile'].values()),
-                names=list(compliance_data['mobile'].keys()),
-                title="Mobile Device Compliance Status"
-            )
-            st.plotly_chart(fig, use_container_width=True)
+# Removed endpoint protection and IoT/mobile security modules as requested
 
 def show_attack_simulation():
     """Attack simulation and testing interface"""
