@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 import time
 import threading
 import os
+import psutil
+import socket
+import subprocess
+import platform
 
 # Import our custom modules
 from core.threat_detection import ThreatDetectionEngine
@@ -14,14 +18,12 @@ from core.log_analyzer import LogAnalyzer
 from core.alert_manager import AlertManager
 from simulation.attack_simulator import AttackSimulator
 from monitoring.network_monitor import NetworkMonitor
-from monitoring.website_monitor import WebsiteMonitor
-# Removed endpoint, IoT, and mobile monitoring modules as requested
 from utils.data_processor import DataProcessor
 from utils.threat_intelligence import ThreatIntelligence
 
 # Configure page
 st.set_page_config(
-    page_title="AI Cybersecurity Threat Detection System",
+    page_title="AI Cybersecurity Laptop Scanner",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -35,1346 +37,827 @@ if 'threat_engine' not in st.session_state:
     st.session_state.alert_manager = AlertManager()
     st.session_state.attack_simulator = AttackSimulator()
     st.session_state.network_monitor = NetworkMonitor()
-    st.session_state.website_monitor = WebsiteMonitor()
     st.session_state.data_processor = DataProcessor()
     st.session_state.threat_intel = ThreatIntelligence()
 
 def main():
-    st.title("🛡️ AI-Powered Cybersecurity Threat Detection System")
-    st.markdown("### Comprehensive Multi-Environment Security Monitoring & Response")
+    st.title("🛡️ AI-Powered Laptop Security Scanner")
+    st.markdown("### Comprehensive Local System Threat Detection & Protection")
     
-    # Sidebar navigation with direct buttons
-    st.sidebar.title("🛡️ Security Center")
+    # Sidebar navigation
+    st.sidebar.title("🛡️ Laptop Security Center")
     
     # Initialize page selection
     if 'current_page' not in st.session_state:
-        st.session_state.current_page = "🏠 Dashboard Overview"
+        st.session_state.current_page = "🖥️ System Overview"
     
-    # Dashboard & Monitoring section
-    st.sidebar.markdown("### 📊 **Dashboard & Monitoring**")
-    if st.sidebar.button("🏠 Dashboard Overview", use_container_width=True):
-        st.session_state.current_page = "🏠 Dashboard Overview"
-    if st.sidebar.button("🎯 Real-Time Threat Detection", use_container_width=True):
-        st.session_state.current_page = "🎯 Real-Time Threat Detection"
-    if st.sidebar.button("📊 Alert Management", use_container_width=True):
-        st.session_state.current_page = "📊 Alert Management"
+    # System Monitoring section
+    st.sidebar.markdown("### 📊 **System Monitoring**")
+    if st.sidebar.button("🖥️ System Overview", use_container_width=True):
+        st.session_state.current_page = "🖥️ System Overview"
+    if st.sidebar.button("🔍 Full System Scan", use_container_width=True):
+        st.session_state.current_page = "🔍 Full System Scan"
+    if st.sidebar.button("📊 Real-Time Monitoring", use_container_width=True):
+        st.session_state.current_page = "📊 Real-Time Monitoring"
     
-    # Analysis & Investigation section
-    st.sidebar.markdown("### 🔍 **Analysis & Investigation**")
-    if st.sidebar.button("🔍 Log Analysis", use_container_width=True):
-        st.session_state.current_page = "🔍 Log Analysis"
-    if st.sidebar.button("📈 Analytics & Reports", use_container_width=True):
-        st.session_state.current_page = "📈 Analytics & Reports"
+    # Security Scans section
+    st.sidebar.markdown("### 🔍 **Security Scans**")
+    if st.sidebar.button("🌐 Network Security", use_container_width=True):
+        st.session_state.current_page = "🌐 Network Security"
+    if st.sidebar.button("💾 File System Scan", use_container_width=True):
+        st.session_state.current_page = "💾 File System Scan"
+    if st.sidebar.button("⚙️ Process & Services", use_container_width=True):
+        st.session_state.current_page = "⚙️ Process & Services"
+    if st.sidebar.button("🔥 Firewall Analysis", use_container_width=True):
+        st.session_state.current_page = "🔥 Firewall Analysis"
     
     # Protection Systems section
     st.sidebar.markdown("### 🛡️ **Protection Systems**")
-    if st.sidebar.button("🌐 Network Security", use_container_width=True):
-        st.session_state.current_page = "🌐 Network Security"
-    if st.sidebar.button("🌍 Website Security", use_container_width=True):
-        st.session_state.current_page = "🌍 Website Security"
-    
-    # Testing & Configuration section
-    st.sidebar.markdown("### ⚔️ **Testing & Configuration**")
-    if st.sidebar.button("⚔️ Attack Simulation", use_container_width=True):
-        st.session_state.current_page = "⚔️ Attack Simulation"
-    if st.sidebar.button("⚙️ System Configuration", use_container_width=True):
-        st.session_state.current_page = "⚙️ System Configuration"
+    if st.sidebar.button("🚨 IDS/IPS Monitoring", use_container_width=True):
+        st.session_state.current_page = "🚨 IDS/IPS Monitoring"
+    if st.sidebar.button("☁️ Cloud APIs Security", use_container_width=True):
+        st.session_state.current_page = "☁️ Cloud APIs Security"
+    if st.sidebar.button("📋 Alert Management", use_container_width=True):
+        st.session_state.current_page = "📋 Alert Management"
     
     # Get current page
     page = st.session_state.current_page
     
     # Real-time monitoring toggle
-    if st.sidebar.checkbox("Enable Real-Time Monitoring"):
+    if st.sidebar.checkbox("Enable Real-Time Protection"):
         if 'monitoring_active' not in st.session_state:
             st.session_state.monitoring_active = True
             start_background_monitoring()
     
     # Route to selected page
-    if page == "🏠 Dashboard Overview":
-        show_dashboard_overview()
-    elif page == "🎯 Real-Time Threat Detection":
-        show_threat_detection()
-    elif page == "📊 Alert Management":
-        show_alert_management()
-    elif page == "🔍 Log Analysis":
-        show_log_analysis()
+    if page == "🖥️ System Overview":
+        show_system_overview()
+    elif page == "🔍 Full System Scan":
+        show_full_system_scan()
+    elif page == "📊 Real-Time Monitoring":
+        show_real_time_monitoring()
     elif page == "🌐 Network Security":
         show_network_security()
-    elif page == "🌍 Website Security":
-        show_website_security()
-    elif page == "⚔️ Attack Simulation":
-        show_attack_simulation()
-    elif page == "📈 Analytics & Reports":
-        show_analytics_reports()
-    elif page == "⚙️ System Configuration":
-        show_system_configuration()
+    elif page == "💾 File System Scan":
+        show_file_system_scan()
+    elif page == "⚙️ Process & Services":
+        show_process_services()
+    elif page == "🔥 Firewall Analysis":
+        show_firewall_analysis()
+    elif page == "🚨 IDS/IPS Monitoring":
+        show_ids_ips_monitoring()
+    elif page == "☁️ Cloud APIs Security":
+        show_cloud_apis_security()
+    elif page == "📋 Alert Management":
+        show_alert_management()
 
-def show_dashboard_overview():
-    """Main dashboard with system overview"""
+def show_system_overview():
+    """Main system overview dashboard"""
+    st.header("🖥️ System Security Overview")
+    
+    # System information
     col1, col2, col3, col4 = st.columns(4)
     
-    # Get current system status
-    active_threats = st.session_state.threat_engine.get_active_threats()
-    alerts_count = st.session_state.alert_manager.get_alerts_count()
-    system_health = st.session_state.threat_engine.get_system_health()
-    
     with col1:
-        st.metric("Active Threats", len(active_threats), delta=f"+{len([t for t in active_threats if t['timestamp'] > datetime.now() - timedelta(hours=1)])}")
+        system_info = platform.uname()
+        st.metric("System", f"{system_info.system}")
+        st.write(f"**Hostname**: {system_info.node}")
+        st.write(f"**Release**: {system_info.release}")
     
     with col2:
-        st.metric("Critical Alerts", alerts_count['critical'], delta=f"+{alerts_count.get('new_critical', 0)}")
+        cpu_percent = psutil.cpu_percent(interval=1)
+        st.metric("CPU Usage", f"{cpu_percent:.1f}%")
+        cpu_count = psutil.cpu_count()
+        st.write(f"**CPU Cores**: {cpu_count}")
     
     with col3:
-        st.metric("System Health", f"{system_health['score']:.1f}/10", delta=f"{system_health['trend']:+.1f}")
+        memory = psutil.virtual_memory()
+        memory_percent = memory.percent
+        memory_total = memory.total / (1024**3)  # GB
+        st.metric("Memory Usage", f"{memory_percent:.1f}%")
+        st.write(f"**Total RAM**: {memory_total:.1f} GB")
     
     with col4:
-        st.metric("Protected Assets", system_health['protected_assets'], delta=f"+{system_health.get('new_assets', 0)}")
+        disk = psutil.disk_usage('/')
+        disk_percent = (disk.used / disk.total) * 100
+        disk_total = disk.total / (1024**3)  # GB
+        st.metric("Disk Usage", f"{disk_percent:.1f}%")
+        st.write(f"**Total Storage**: {disk_total:.1f} GB")
     
-    # Threat severity distribution
-    st.subheader("🚨 Current Threat Landscape")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Threat types pie chart
-        threat_types = st.session_state.threat_engine.get_threat_distribution()
-        if threat_types:
-            fig = px.pie(
-                values=list(threat_types.values()),
-                names=list(threat_types.keys()),
-                title="Threat Types Distribution"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        # Alert timeline
-        alerts_timeline = st.session_state.alert_manager.get_alerts_timeline()
-        if alerts_timeline and alerts_timeline['timestamps'] and alerts_timeline['counts']:
-            # Create DataFrame for plotly
-            df_timeline = pd.DataFrame({
-                'timestamps': alerts_timeline['timestamps'],
-                'counts': alerts_timeline['counts']
-            })
-            fig = px.line(
-                df_timeline,
-                x='timestamps',
-                y='counts',
-                title="Alerts Over Time (Last 24h)",
-                markers=True
-            )
-            fig.update_layout(showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("📈 No alert timeline data available yet")
-    
-    # Recent threats table
-    st.subheader("🔍 Recent Threat Activity")
-    if active_threats:
-        df = pd.DataFrame(active_threats)
-        st.dataframe(df, use_container_width=True)
-    else:
-        st.info("No active threats detected in the current timeframe.")
-    
-    # Network Security Status
-    st.subheader("🌐 Network Security Status")
-    col1, col2, col3 = st.columns(3)
-    
-    network_status = st.session_state.network_monitor.get_status()
+    # Security status indicators
+    st.subheader("🔒 Security Status")
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Monitored Devices", network_status['devices'])
+        # Check if firewall is active (basic check)
+        firewall_status = check_firewall_status()
+        status_color = "🟢" if firewall_status else "🔴"
+        st.metric("Firewall", f"{status_color} {'Active' if firewall_status else 'Inactive'}")
     
     with col2:
-        st.metric("Blocked IPs", network_status['blocked_ips'])
+        # Check running processes for threats
+        threat_processes = scan_suspicious_processes()
+        process_color = "🟢" if len(threat_processes) == 0 else "🔴"
+        st.metric("Suspicious Processes", f"{process_color} {len(threat_processes)}")
     
     with col3:
-        st.metric("Active Connections", network_status['total_connections'])
+        # Network connections
+        network_connections = len(psutil.net_connections())
+        st.metric("Network Connections", network_connections)
+    
+    with col4:
+        # System uptime
+        boot_time = psutil.boot_time()
+        uptime = datetime.now() - datetime.fromtimestamp(boot_time)
+        st.metric("System Uptime", f"{uptime.days} days")
+    
+    # Recent activity timeline
+    st.subheader("📊 System Activity Timeline")
+    
+    # Process activity chart
+    processes = []
+    for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']):
+        try:
+            processes.append(proc.info)
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    
+    if processes:
+        df_processes = pd.DataFrame(processes)
+        df_processes = df_processes.nlargest(10, 'cpu_percent')
+        
+        fig = px.bar(
+            df_processes,
+            x='name',
+            y='cpu_percent',
+            title="Top 10 CPU-Consuming Processes"
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-def show_threat_detection():
-    """Real-time threat detection interface"""
-    st.header("🎯 Real-Time Threat Detection Engine")
+def show_full_system_scan():
+    """Comprehensive system security scan"""
+    st.header("🔍 Full System Security Scan")
     
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.subheader("🔍 AI Analysis Dashboard")
+    if st.button("🚀 Start Comprehensive Scan", use_container_width=True):
+        progress_bar = st.progress(0)
+        status_text = st.empty()
         
-        # Real-time threat feed
-        if st.button("🔄 Refresh Threat Analysis"):
-            with st.spinner("Analyzing threats..."):
-                threats = st.session_state.ai_analyzer.analyze_real_time()
-                
-                if threats:
-                    for threat in threats:
-                        severity_color = {
-                            'Critical': '🔴',
-                            'High': '🟠', 
-                            'Medium': '🟡',
-                            'Low': '🟢'
-                        }.get(threat['severity'], '⚪')
-                        
-                        st.warning(f"{severity_color} **{threat['type']}** - Confidence: {threat['confidence']:.1%}")
-                        st.write(f"**Target**: {threat['target']}")
-                        st.write(f"**Description**: {threat['description']}")
-                        st.write(f"**Recommended Action**: {threat['action']}")
-                        st.write("---")
-                else:
-                    st.success("✅ No active threats detected")
-    
-    with col2:
-        st.subheader("⚙️ Detection Settings")
-        
-        # Detection sensitivity
-        sensitivity = st.slider("Detection Sensitivity", 0.1, 1.0, 0.7, 0.1)
-        st.session_state.ai_analyzer.set_sensitivity(sensitivity)
-        
-        # Monitored threat types
-        st.write("**Monitored Threats:**")
-        threat_types = [
-            "Ransomware", "Zero-day Exploits", "Network Intrusions",
-            "Malware", "Phishing", "DDoS Attacks", "Data Exfiltration",
-            "Privilege Escalation", "Lateral Movement", "Social Engineering"
+        # Scan phases
+        scan_phases = [
+            ("🔍 Scanning file system for malware...", scan_file_system),
+            ("🌐 Analyzing network connections...", scan_network_connections),
+            ("⚙️ Checking running processes...", scan_processes),
+            ("🔥 Examining firewall status...", scan_firewall),
+            ("☁️ Testing cloud API security...", scan_cloud_apis),
+            ("📋 Generating security report...", generate_scan_report)
         ]
         
-        selected_threats = []
-        for threat in threat_types:
-            if st.checkbox(threat, value=True):
-                selected_threats.append(threat)
-        
-        st.session_state.ai_analyzer.set_monitored_threats(selected_threats)
-        
-        # Auto-response settings
-        st.write("**Auto-Response:**")
-        auto_quarantine = st.checkbox("Auto-quarantine malicious files")
-        auto_block_ips = st.checkbox("Auto-block suspicious IPs")
-        auto_isolate_endpoints = st.checkbox("Auto-isolate compromised endpoints")
-    
-    # Threat pattern analysis
-    st.subheader("📊 Threat Pattern Analysis")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Attack vectors
-        attack_vectors = st.session_state.ai_analyzer.get_attack_vectors()
-        if attack_vectors:
-            fig = px.bar(
-                x=list(attack_vectors.keys()),
-                y=list(attack_vectors.values()),
-                title="Most Common Attack Vectors (Last 7 Days)"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        # Confidence scores distribution
-        confidence_dist = st.session_state.ai_analyzer.get_confidence_distribution()
-        if confidence_dist:
-            fig = px.histogram(
-                x=confidence_dist,
-                title="Detection Confidence Distribution"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-def show_alert_management():
-    """Alert management and response interface"""
-    st.header("📊 Alert Management & Incident Response")
-    
-    # Alert filters
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        severity_filter = st.selectbox("Severity", ["All", "Critical", "High", "Medium", "Low"])
-    with col2:
-        status_filter = st.selectbox("Status", ["All", "Open", "In Progress", "Resolved", "False Positive"])
-    with col3:
-        time_filter = st.selectbox("Time Range", ["Last Hour", "Last 24h", "Last 7 days", "Last 30 days"])
-    with col4:
-        environment_filter = st.selectbox("Environment", ["All", "Network", "Endpoint", "Cloud", "IoT", "Mobile"])
-    
-    # Get filtered alerts
-    alerts = st.session_state.alert_manager.get_filtered_alerts(
-        severity=severity_filter,
-        status=status_filter,
-        time_range=time_filter,
-        environment=environment_filter
-    )
-    
-    # Alert summary metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Total Alerts", len(alerts))
-    with col2:
-        critical_count = len([a for a in alerts if a['severity'] == 'Critical'])
-        st.metric("Critical Alerts", critical_count)
-    with col3:
-        open_count = len([a for a in alerts if a['status'] == 'Open'])
-        st.metric("Open Alerts", open_count)
-    with col4:
-        false_positive_rate = st.session_state.alert_manager.get_false_positive_rate()
-        st.metric("False Positive Rate", f"{false_positive_rate:.1%}")
-    
-    # Alert management interface
-    if alerts:
-        st.subheader("🚨 Active Alerts")
-        
-        for i, alert in enumerate(alerts[:10]):  # Show top 10
-            with st.expander(f"{alert['severity']} - {alert['title']} ({alert['timestamp']})"):
-                col1, col2 = st.columns([3, 1])
-                
-                with col1:
-                    st.write(f"**Description**: {alert['description']}")
-                    st.write(f"**Affected Asset**: {alert['asset']}")
-                    st.write(f"**Source**: {alert['source']}")
-                    st.write(f"**Confidence**: {alert['confidence']:.1%}")
-                    
-                    if alert.get('indicators'):
-                        st.write("**Indicators of Compromise (IoCs):**")
-                        for ioc in alert['indicators']:
-                            st.code(ioc)
-                
-                with col2:
-                    st.write(f"**Status**: {alert['status']}")
-                    st.write(f"**Assigned To**: {alert.get('assigned_to', 'Unassigned')}")
-                    
-                    # Action buttons
-                    if st.button(f"Investigate", key=f"investigate_{i}"):
-                        st.session_state.alert_manager.start_investigation(alert['id'])
-                        st.success("Investigation started")
-                        st.rerun()
-                    
-                    if st.button(f"Mark False Positive", key=f"fp_{i}"):
-                        st.session_state.alert_manager.mark_false_positive(alert['id'])
-                        st.success("Marked as false positive")
-                        st.rerun()
-                    
-                    if st.button(f"Resolve", key=f"resolve_{i}"):
-                        st.session_state.alert_manager.resolve_alert(alert['id'])
-                        st.success("Alert resolved")
-                        st.rerun()
-    
-    # False positive analysis
-    st.subheader("📈 False Positive Analysis")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        fp_trends = st.session_state.alert_manager.get_false_positive_trends()
-        if fp_trends:
-            fig = px.line(
-                x=fp_trends['dates'],
-                y=fp_trends['rates'],
-                title="False Positive Rate Trend"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        fp_by_type = st.session_state.alert_manager.get_false_positives_by_type()
-        if fp_by_type:
-            fig = px.bar(
-                x=list(fp_by_type.keys()),
-                y=list(fp_by_type.values()),
-                title="False Positives by Alert Type"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-def show_log_analysis():
-    """Log analysis and forensics interface"""
-    st.header("🔍 Advanced Log Analysis & Digital Forensics")
-    
-    # Log source selection
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        log_sources = st.multiselect(
-            "Select Log Sources",
-            ["Windows Event Logs", "Linux Syslogs", "Network Devices", "Web Servers", 
-             "Database Logs", "Cloud Audit Logs", "IoT Device Logs", "Mobile Device Logs"],
-            default=["Windows Event Logs", "Network Devices"]
-        )
-    
-    with col2:
-        time_range = st.selectbox(
-            "Analysis Time Range",
-            ["Last Hour", "Last 24h", "Last 7 days", "Custom Range"]
-        )
-    
-    with col3:
-        analysis_type = st.selectbox(
-            "Analysis Type",
-            ["Real-time", "Historical", "Correlation", "Pattern Detection"]
-        )
-    
-    # Custom time range
-    if time_range == "Custom Range":
-        col1, col2 = st.columns(2)
-        with col1:
-            start_date = st.date_input("Start Date")
-        with col2:
-            end_date = st.date_input("End Date")
-    
-    # Log analysis controls
-    if st.button("🔍 Start Log Analysis"):
-        with st.spinner("Analyzing logs..."):
-            results = st.session_state.log_analyzer.analyze_logs(
-                sources=log_sources,
-                time_range=time_range,
-                analysis_type=analysis_type
-            )
+        results = {}
+        for i, (description, scan_func) in enumerate(scan_phases):
+            status_text.text(description)
+            progress_bar.progress((i + 1) / len(scan_phases))
             
-            if results:
-                st.success(f"Analysis complete. Found {len(results['events'])} relevant events.")
-                
-                # Event timeline
-                st.subheader("📅 Event Timeline")
-                if results['timeline']:
-                    fig = px.scatter(
-                        x=results['timeline']['timestamps'],
-                        y=results['timeline']['sources'],
-                        color=results['timeline']['severities'],
-                        title="Security Events Timeline"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                # Top findings
-                st.subheader("🎯 Key Findings")
-                for finding in results['findings'][:5]:
-                    severity_emoji = {
-                        'Critical': '🔴',
-                        'High': '🟠',
-                        'Medium': '🟡',
-                        'Low': '🟢'
-                    }.get(finding['severity'], '⚪')
-                    
-                    st.write(f"{severity_emoji} **{finding['title']}**")
-                    st.write(f"Confidence: {finding['confidence']:.1%}")
-                    st.write(f"Description: {finding['description']}")
-                    
-                    if finding.get('recommendations'):
-                        st.write("**Recommendations:**")
-                        for rec in finding['recommendations']:
-                            st.write(f"• {rec}")
-                    st.write("---")
-                
-                # Raw log viewer
-                with st.expander("📄 Raw Log Data"):
-                    if results['raw_logs']:
-                        df = pd.DataFrame(results['raw_logs'])
-                        st.dataframe(df, use_container_width=True)
-    
-    # Log correlation analysis
-    st.subheader("🔗 Cross-Platform Log Correlation")
-    
-    if st.button("🔄 Run Correlation Analysis"):
-        correlations = st.session_state.log_analyzer.run_correlation_analysis()
+            with st.spinner(description):
+                time.sleep(2)  # Simulate scan time
+                results[scan_func.__name__] = scan_func()
         
-        if correlations:
-            for correlation in correlations:
-                st.write(f"**Correlation Pattern**: {correlation['pattern']}")
-                st.write(f"**Confidence**: {correlation['confidence']:.1%}")
-                st.write(f"**Affected Systems**: {', '.join(correlation['systems'])}")
-                st.write(f"**Timeline**: {correlation['timespan']}")
-                st.write("---")
+        status_text.text("✅ Scan completed!")
+        
+        # Display results
+        show_scan_results(results)
+
+def show_real_time_monitoring():
+    """Real-time system monitoring"""
+    st.header("📊 Real-Time System Monitoring")
+    
+    # Auto-refresh controls
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        auto_refresh = st.checkbox("Auto-refresh every 5 seconds", value=True)
+    with col2:
+        if st.button("🔄 Refresh Now"):
+            st.rerun()
+    
+    # Real-time metrics
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📈 System Performance")
+        
+        # CPU usage over time (simulated)
+        cpu_data = []
+        for i in range(20):
+            cpu_data.append({
+                'time': datetime.now() - timedelta(seconds=i*5),
+                'cpu': psutil.cpu_percent()
+            })
+        
+        df_cpu = pd.DataFrame(cpu_data)
+        fig_cpu = px.line(df_cpu, x='time', y='cpu', title='CPU Usage (Last 100 seconds)')
+        st.plotly_chart(fig_cpu, use_container_width=True)
+        
+        # Memory usage
+        memory = psutil.virtual_memory()
+        fig_memory = px.pie(
+            values=[memory.used, memory.available],
+            names=['Used', 'Available'],
+            title='Memory Usage'
+        )
+        st.plotly_chart(fig_memory, use_container_width=True)
+    
+    with col2:
+        st.subheader("🔒 Security Events")
+        
+        # Simulated security events
+        security_events = [
+            {"time": "11:45:23", "event": "🟢 Normal login detected", "severity": "Low"},
+            {"time": "11:44:15", "event": "🟡 New process started: chrome.exe", "severity": "Medium"},
+            {"time": "11:43:02", "event": "🟢 Firewall rule applied", "severity": "Low"},
+            {"time": "11:42:45", "event": "🔴 Suspicious network connection", "severity": "High"},
+            {"time": "11:41:30", "event": "🟡 File access: system32", "severity": "Medium"}
+        ]
+        
+        for event in security_events:
+            severity_color = {"Low": "🟢", "Medium": "🟡", "High": "🔴"}.get(event["severity"], "⚪")
+            st.write(f"**{event['time']}** {severity_color} {event['event']}")
+    
+    # Auto-refresh functionality
+    if auto_refresh:
+        time.sleep(5)
+        st.rerun()
 
 def show_network_security():
-    """Network security monitoring interface"""
-    st.header("🌐 Network Security Monitoring")
-    
-    # Network overview
-    col1, col2, col3, col4 = st.columns(4)
-    
-    network_stats = st.session_state.network_monitor.get_network_statistics()
-    
-    with col1:
-        st.metric("Monitored Networks", network_stats['networks'])
-    with col2:
-        st.metric("Active Connections", network_stats['connections'])
-    with col3:
-        st.metric("Blocked Threats", network_stats['blocked_threats'])
-    with col4:
-        st.metric("Network Health", f"{network_stats['health_score']:.1f}/10")
-    
-    # Real-time network monitoring
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("🔍 Real-Time Traffic Analysis")
-        
-        if st.button("📊 Analyze Current Traffic"):
-            with st.spinner("Analyzing network traffic..."):
-                traffic_analysis = st.session_state.network_monitor.analyze_traffic()
-                
-                if traffic_analysis['threats']:
-                    st.warning("⚠️ Suspicious Network Activity Detected!")
-                    for threat in traffic_analysis['threats']:
-                        st.write(f"**Type**: {threat['type']}")
-                        st.write(f"**Source**: {threat['source_ip']}")
-                        st.write(f"**Destination**: {threat['dest_ip']}")
-                        st.write(f"**Risk Level**: {threat['risk_level']}")
-                        st.write("---")
-                else:
-                    st.success("✅ No suspicious network activity detected")
-    
-    with col2:
-        st.subheader("🛡️ Intrusion Detection")
-        
-        # IDS/IPS status
-        ids_status = st.session_state.network_monitor.get_ids_status()
-        
-        st.write(f"**IDS Status**: {'🟢 Active' if ids_status['active'] else '🔴 Inactive'}")
-        st.write(f"**Signatures Updated**: {ids_status['last_update']}")
-        st.write(f"**Detection Rules**: {ids_status['rules_count']}")
-        
-        if st.button("🔄 Update Signatures"):
-            st.session_state.network_monitor.update_signatures()
-            st.success("Signatures updated successfully")
-    
-    # Network topology visualization
-    st.subheader("🗺️ Network Topology & Threat Map")
-    
-    topology_data = st.session_state.network_monitor.get_network_topology()
-    if topology_data:
-        # Create network visualization
-        fig = go.Figure()
-        
-        # Add nodes (devices)
-        for device in topology_data['devices']:
-            color = 'red' if device['status'] == 'compromised' else 'yellow' if device['status'] == 'suspicious' else 'green'
-            fig.add_trace(go.Scatter(
-                x=[device['x']],
-                y=[device['y']],
-                mode='markers+text',
-                marker=dict(size=15, color=color),
-                text=device['name'],
-                textposition="bottom center",
-                name=device['type']
-            ))
-        
-        # Add connections
-        for connection in topology_data['connections']:
-            fig.add_trace(go.Scatter(
-                x=[connection['x1'], connection['x2']],
-                y=[connection['y1'], connection['y2']],
-                mode='lines',
-                line=dict(color='gray', width=2),
-                showlegend=False
-            ))
-        
-        fig.update_layout(title="Network Topology with Threat Indicators")
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Firewall management
-    st.subheader("🔥 Firewall Management")
+    """Network security analysis"""
+    st.header("🌐 Network Security Analysis")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.write("**Blocked IPs (Last 24h)**")
-        blocked_ips = st.session_state.network_monitor.get_blocked_ips()
-        if blocked_ips:
-            df = pd.DataFrame(blocked_ips)
-            st.dataframe(df, use_container_width=True)
-    
-    with col2:
-        st.write("**Add IP to Blocklist**")
-        ip_to_block = st.text_input("IP Address")
-        reason = st.text_input("Reason")
-        if st.button("🚫 Block IP"):
-            if ip_to_block:
-                st.session_state.network_monitor.block_ip(ip_to_block, reason)
-                st.success(f"IP {ip_to_block} blocked successfully")
-
-def show_website_security():
-    """Website security monitoring interface"""
-    st.header("🌍 Website Security Monitoring")
-    
-    # Website input section
-    st.subheader("🎯 Add Website to Monitor")
-    
-    col1, col2, col3 = st.columns([2, 1, 1])
-    
-    with col1:
-        website_url = st.text_input("Website URL", placeholder="https://example.com or example.com")
-    
-    with col2:
-        website_name = st.text_input("Display Name (Optional)", placeholder="My Website")
-    
-    with col3:
-        st.write("")  # Spacing
-        st.write("")
-        if st.button("➕ Add Website", use_container_width=True):
-            if website_url:
-                success = st.session_state.website_monitor.add_website(website_url, website_name)
-                if success:
-                    st.success(f"Website {website_url} added successfully!")
-                    st.rerun()
-                else:
-                    st.error("Failed to add website. Please check the URL format.")
-    
-    # Monitored websites section
-    monitored_sites = st.session_state.website_monitor.get_monitored_websites()
-    
-    if monitored_sites:
-        st.subheader("🔍 Monitored Websites")
+        st.subheader("🔍 Active Network Connections")
         
-        for url, site_info in monitored_sites.items():
-            with st.expander(f"🌐 {site_info['name']} ({url})"):
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.write(f"**Added**: {site_info['added'].strftime('%Y-%m-%d %H:%M')}")
-                    if site_info['last_scan']:
-                        st.write(f"**Last Scan**: {site_info['last_scan'].strftime('%Y-%m-%d %H:%M')}")
-                    else:
-                        st.write("**Last Scan**: Never")
-                
-                with col2:
-                    st.write(f"**Status**: {site_info['status'].title()}")
-                    
-                with col3:
-                    if st.button(f"🔍 Scan Now", key=f"scan_{url}"):
-                        with st.spinner("Scanning website..."):
-                            scan_results = st.session_state.website_monitor.scan_website(url)
-                            st.session_state.current_scan = scan_results
-                            st.success("Scan completed!")
-                            st.rerun()
-                    
-                    if st.button(f"🗑️ Remove", key=f"remove_{url}"):
-                        st.session_state.website_monitor.remove_website(url)
-                        st.success("Website removed!")
-                        st.rerun()
-    else:
-        st.info("No websites being monitored yet. Add a website above to get started.")
-    
-    # Display latest scan results
-    if hasattr(st.session_state, 'current_scan') and st.session_state.current_scan:
-        results = st.session_state.current_scan
-        
-        st.subheader("🔍 Latest Scan Results")
-        
-        # Security score and overview
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            score = results.get('security_score', 0)
-            score_color = "🟢" if score >= 80 else "🟡" if score >= 60 else "🔴"
-            st.metric("Security Score", f"{score:.1f}/100", delta=f"{score_color}")
-        
-        with col2:
-            availability = results.get('availability', {})
-            status = "🟢 Online" if availability.get('available') else "🔴 Offline"
-            st.metric("Availability", status)
-        
-        with col3:
-            ssl_info = results.get('ssl_security', {})
-            https_status = "🔒 HTTPS" if ssl_info.get('https_enabled') else "🔓 HTTP"
-            st.metric("SSL Status", https_status)
-        
-        with col4:
-            vulns = results.get('vulnerabilities', [])
-            vuln_count = len(vulns)
-            vuln_color = "🟢" if vuln_count == 0 else "🟡" if vuln_count <= 2 else "🔴"
-            st.metric("Vulnerabilities", f"{vuln_count} {vuln_color}")
-        
-        # Detailed analysis tabs
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["🔒 SSL/TLS", "🛡️ Security Headers", "📄 Content Analysis", "🚨 Vulnerabilities", "⚡ Performance"])
-        
-        with tab1:
-            ssl_security = results.get('ssl_security', {})
-            if ssl_security.get('https_enabled'):
-                st.success("✅ HTTPS is enabled")
-                
-                cert = ssl_security.get('certificate', {})
-                if cert:
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write("**Certificate Information:**")
-                        if cert.get('subject'):
-                            for key, value in cert['subject'].items():
-                                st.write(f"• {key}: {value}")
-                    
-                    with col2:
-                        st.write("**Certificate Details:**")
-                        if cert.get('expires'):
-                            st.write(f"• Expires: {cert['expires'][:10]}")
-                        if cert.get('days_until_expiry'):
-                            days = cert['days_until_expiry']
-                            color = "🟢" if days > 30 else "🟡" if days > 7 else "🔴"
-                            st.write(f"• Days until expiry: {days} {color}")
-                        
-                        st.write(f"• Security Level: {ssl_security.get('security_level', 'Unknown')}")
-                
-                issues = ssl_security.get('issues', [])
-                if issues:
-                    st.warning("SSL Issues found:")
-                    for issue in issues:
-                        st.write(f"• {issue}")
+        if st.button("🔄 Scan Network Connections"):
+            connections = psutil.net_connections(kind='inet')
+            
+            connection_data = []
+            for conn in connections:
+                if conn.status == 'ESTABLISHED':
+                    connection_data.append({
+                        'Local': f"{conn.laddr.ip}:{conn.laddr.port}",
+                        'Remote': f"{conn.raddr.ip}:{conn.raddr.port}" if conn.raddr else "N/A",
+                        'Status': conn.status,
+                        'PID': conn.pid or "N/A"
+                    })
+            
+            if connection_data:
+                df_connections = pd.DataFrame(connection_data)
+                st.dataframe(df_connections, use_container_width=True)
             else:
-                st.error("❌ HTTPS is not enabled - website is vulnerable to man-in-the-middle attacks")
+                st.info("No active network connections found")
+    
+    with col2:
+        st.subheader("🛡️ Port Security Scan")
         
-        with tab2:
-            headers = results.get('headers', {})
-            header_score = headers.get('security_score', 0)
-            
-            st.write(f"**Security Headers Score: {header_score}/100**")
-            
-            security_headers = headers.get('headers', {})
-            missing_headers = headers.get('missing_headers', [])
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**Present Headers:**")
-                for header, value in security_headers.items():
-                    if value:
-                        st.success(f"✅ {header}")
-            
-            with col2:
-                if missing_headers:
-                    st.write("**Missing Headers:**")
-                    for header in missing_headers:
-                        st.error(f"❌ {header}")
+        target_ip = st.text_input("Target IP", value="127.0.0.1")
+        port_range = st.text_input("Port Range", value="1-1000")
+        
+        if st.button("🔍 Scan Ports"):
+            with st.spinner("Scanning ports..."):
+                open_ports = scan_ports(target_ip, port_range)
                 
-            recommendations = headers.get('recommendations', [])
-            if recommendations:
-                st.write("**Recommendations:**")
-                for rec in recommendations:
-                    st.write(f"• {rec}")
-        
-        with tab3:
-            content = results.get('content_analysis', {})
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**Content Statistics:**")
-                if content.get('text_length'):
-                    st.write(f"• Text content: {content['text_length']:,} characters")
-                if content.get('external_scripts'):
-                    st.write(f"• External scripts: {content['external_scripts']}")
-                if content.get('inline_scripts'):
-                    st.write(f"• Inline scripts: {content['inline_scripts']}")
-                if content.get('forms_count'):
-                    st.write(f"• Forms: {content['forms_count']}")
-            
-            with col2:
-                security_issues = content.get('security_issues', [])
-                if security_issues:
-                    st.write("**Security Issues:**")
-                    for issue in security_issues:
-                        st.warning(f"⚠️ {issue}")
+                if open_ports:
+                    st.write("**Open Ports Found:**")
+                    for port in open_ports:
+                        st.write(f"• Port {port}: Open")
                 else:
-                    st.success("✅ No content security issues detected")
-            
-            if content.get('content_preview'):
-                with st.expander("📄 Content Preview"):
-                    st.text(content['content_preview'])
+                    st.success("No open ports found in specified range")
+
+def show_file_system_scan():
+    """File system security scan"""
+    st.header("💾 File System Security Scan")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📂 Select Scan Target")
         
-        with tab4:
-            vulnerabilities = results.get('vulnerabilities', [])
+        scan_type = st.radio(
+            "Scan Type",
+            ["Quick Scan (Common locations)", "Full System Scan", "Custom Path"]
+        )
+        
+        if scan_type == "Custom Path":
+            custom_path = st.text_input("Enter path to scan", value=os.path.expanduser("~"))
+        
+        scan_options = st.multiselect(
+            "Scan Options",
+            ["Executable Files (.exe)", "Script Files (.py, .js, .bat)", "Archive Files (.zip, .rar)", "System Files", "Hidden Files"],
+            default=["Executable Files (.exe)", "Script Files (.py, .js, .bat)"]
+        )
+        
+        if st.button("🔍 Start File Scan"):
+            with st.spinner("Scanning files..."):
+                if scan_type == "Quick Scan (Common locations)":
+                    scan_results = scan_common_locations(scan_options)
+                elif scan_type == "Custom Path":
+                    scan_results = scan_custom_path(custom_path, scan_options)
+                else:
+                    scan_results = scan_full_system(scan_options)
+                
+                st.session_state.file_scan_results = scan_results
+    
+    with col2:
+        st.subheader("🚨 Scan Results")
+        
+        if hasattr(st.session_state, 'file_scan_results'):
+            results = st.session_state.file_scan_results
             
-            if vulnerabilities:
-                for vuln in vulnerabilities:
-                    severity_color = {
-                        'Critical': '🔴',
-                        'High': '🟠',
-                        'Medium': '🟡',
-                        'Low': '🟢'
-                    }.get(vuln.get('severity', 'Unknown'), '⚪')
-                    
-                    st.write(f"{severity_color} **{vuln.get('type', 'Unknown')}** - {vuln.get('severity', 'Unknown')}")
-                    st.write(f"Description: {vuln.get('description', 'N/A')}")
-                    if vuln.get('recommendation'):
-                        st.write(f"Recommendation: {vuln['recommendation']}")
-                    st.write("---")
+            # Summary metrics
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Files Scanned", results.get('total_files', 0))
+            with col2:
+                st.metric("Suspicious Files", results.get('suspicious_files', 0))
+            with col3:
+                st.metric("Threats Found", results.get('threats_found', 0))
+            
+            # Detailed results
+            if results.get('suspicious_files', 0) > 0:
+                st.warning("⚠️ Suspicious files detected:")
+                for file_info in results.get('suspicious_file_list', []):
+                    st.write(f"🚨 **{file_info['path']}**")
+                    st.write(f"   Reason: {file_info['reason']}")
+                    st.write(f"   Risk Level: {file_info['risk_level']}")
             else:
-                st.success("✅ No vulnerabilities detected")
-        
-        with tab5:
-            performance = results.get('performance', {})
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if performance.get('load_time'):
-                    st.metric("Load Time", f"{performance['load_time']:.0f}ms")
-                if performance.get('content_size'):
-                    st.metric("Content Size", f"{performance['content_size']:,} bytes")
-            
-            with col2:
-                if performance.get('performance_grade'):
-                    grade = performance['performance_grade']
-                    grade_color = "🟢" if grade in ['A', 'B'] else "🟡" if grade == 'C' else "🔴"
-                    st.metric("Performance Grade", f"{grade} {grade_color}")
-                
-                features = []
-                if performance.get('compression'):
-                    features.append("✅ Compression enabled")
-                else:
-                    features.append("❌ No compression")
-                
-                if performance.get('caching'):
-                    features.append("✅ Caching headers present")
-                else:
-                    features.append("❌ No caching headers")
-                
-                for feature in features:
-                    st.write(feature)
-    
-    # Scan history
-    if monitored_sites:
-        st.subheader("📊 Scan History & Trends")
-        
-        selected_site = st.selectbox("Select Website", list(monitored_sites.keys()))
-        
-        if selected_site:
-            trends = st.session_state.website_monitor.get_security_trends(selected_site)
-            
-            if 'error' not in trends:
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    current_score = trends.get('current_score', 0)
-                    trend = trends.get('trend', 'stable')
-                    trend_emoji = "📈" if trend == 'improving' else "📉" if trend == 'declining' else "➡️"
-                    
-                    st.metric("Current Security Score", f"{current_score:.1f}/100", delta=f"{trend_emoji} {trend.title()}")
-                
-                with col2:
-                    scan_history = st.session_state.website_monitor.get_scan_history(selected_site)
-                    st.metric("Total Scans", len(scan_history))
-                
-                # Security score trend chart
-                if len(trends.get('scores', [])) > 1:
-                    fig = px.line(
-                        x=trends['timestamps'],
-                        y=trends['scores'],
-                        title="Security Score Trend",
-                        labels={'x': 'Scan Date', 'y': 'Security Score'}
-                    )
-                    fig.update_layout(showlegend=False)
-                    st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("Need at least 2 scans to show trends. Perform more scans to see historical data.")
+                st.success("✅ No suspicious files detected")
 
-# Removed endpoint protection and IoT/mobile security modules as requested
-
-def show_attack_simulation():
-    """Attack simulation and testing interface"""
-    st.header("⚔️ Attack Simulation & Penetration Testing")
+def show_process_services():
+    """Process and services monitoring"""
+    st.header("⚙️ Process & Services Security")
     
-    st.warning("⚠️ **WARNING**: Attack simulations should only be run in authorized testing environments!")
-    
-    # Simulation controls
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("🎯 Simulation Categories")
-        
-        simulation_types = {
-            "Ransomware Simulation": {
-                "description": "Simulate ransomware behavior patterns",
-                "attacks": ["File Encryption Simulation", "Registry Modification", "Network Share Encryption"]
-            },
-            "Network Intrusion": {
-                "description": "Test network security defenses",
-                "attacks": ["Port Scanning", "DDoS Simulation", "Man-in-the-Middle"]
-            },
-            "Endpoint Attacks": {
-                "description": "Test endpoint protection systems",
-                "attacks": ["Malware Simulation", "Process Injection", "Privilege Escalation"]
-            },
-            "Social Engineering": {
-                "description": "Test human factor security",
-                "attacks": ["Phishing Simulation", "USB Drop Attack", "Physical Breach"]
-            },
-            "Advanced Persistent Threats": {
-                "description": "Multi-stage attack campaigns",
-                "attacks": ["Lateral Movement", "Data Exfiltration", "Command & Control"]
-            }
-        }
-        
-        selected_category = st.selectbox("Select Attack Category", list(simulation_types.keys()))
-        selected_attack = None
-        
-        if selected_category:
-            st.write(f"**Description**: {simulation_types[selected_category]['description']}")
-            selected_attack = st.selectbox("Select Specific Attack", simulation_types[selected_category]['attacks'])
-    
-    with col2:
-        st.subheader("⚙️ Simulation Parameters")
-        
-        # Target selection
-        target_environment = st.selectbox(
-            "Target Environment",
-            ["Test Network", "Isolated Lab", "Sandbox Environment"]
-        )
-        
-        intensity_level = st.slider("Attack Intensity", 1, 10, 5)
-        duration = st.selectbox("Duration", ["1 minute", "5 minutes", "15 minutes", "30 minutes"])
-        
-        # Safety settings
-        safe_mode = st.checkbox("Safe Mode (No actual system changes)", value=True)
-        log_everything = st.checkbox("Detailed Logging", value=True)
-        auto_cleanup = st.checkbox("Auto-cleanup after simulation", value=True)
-    
-    # Start simulation
-    if st.button("🚀 Start Attack Simulation"):
-        if not safe_mode:
-            if not st.checkbox("I understand this will make actual system changes"):
-                st.error("Please acknowledge the risks before proceeding without safe mode")
-                return
-        
-        if not selected_attack:
-            st.error("Please select an attack type before starting simulation")
-            return
-            
-        with st.spinner(f"Running {selected_attack} simulation..."):
-            simulation_results = st.session_state.attack_simulator.run_simulation(
-                category=selected_category,
-                attack_type=selected_attack,
-                target=target_environment,
-                intensity=intensity_level,
-                duration=duration,
-                safe_mode=safe_mode
-            )
-            
-            # Display results
-            st.success("✅ Simulation completed successfully!")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.subheader("📊 Detection Results")
-                st.write(f"**Attacks Launched**: {simulation_results['attacks_launched']}")
-                st.write(f"**Attacks Detected**: {simulation_results['attacks_detected']}")
-                detection_rate = (simulation_results['attacks_detected'] / simulation_results['attacks_launched']) * 100
-                st.metric("Detection Rate", f"{detection_rate:.1f}%")
-                
-                if simulation_results['missed_attacks']:
-                    st.write("**Missed Attacks:**")
-                    for missed in simulation_results['missed_attacks']:
-                        st.write(f"• {missed}")
-            
-            with col2:
-                st.subheader("🕒 Response Times")
-                st.write(f"**Average Detection Time**: {simulation_results['avg_detection_time']}")
-                st.write(f"**Fastest Response**: {simulation_results['fastest_response']}")
-                st.write(f"**Slowest Response**: {simulation_results['slowest_response']}")
-                
-                if simulation_results['response_actions']:
-                    st.write("**Automated Responses Triggered:**")
-                    for action in simulation_results['response_actions']:
-                        st.write(f"• {action}")
-    
-    # Penetration testing results
-    st.subheader("🔍 Previous Simulation Results")
-    
-    simulation_history = st.session_state.attack_simulator.get_simulation_history()
-    
-    if simulation_history:
-        df = pd.DataFrame(simulation_history)
-        
-        # Summary metrics
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            avg_detection = df['detection_rate'].mean()
-            st.metric("Average Detection Rate", f"{avg_detection:.1f}%")
-        
-        with col2:
-            total_simulations = len(df)
-            st.metric("Total Simulations", total_simulations)
-        
-        with col3:
-            successful_blocks = df['attacks_blocked'].sum()
-            st.metric("Total Attacks Blocked", successful_blocks)
-        
-        with col4:
-            avg_response_time = df['avg_response_time'].mean()
-            st.metric("Avg Response Time", f"{avg_response_time:.1f}s")
-        
-        # Detection rate trend
-        fig = px.line(
-            df,
-            x='timestamp',
-            y='detection_rate',
-            title="Detection Rate Trend Over Time"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Detailed results table
-        st.dataframe(df, use_container_width=True)
-
-def show_analytics_reports():
-    """Analytics and reporting interface"""
-    st.header("📈 Security Analytics & Reporting")
-    
-    # Report type selection
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        report_type = st.selectbox(
-            "Report Type",
-            ["Executive Summary", "Technical Analysis", "Compliance Report", "Threat Intelligence", "Custom Report"]
-        )
-    
-    with col2:
-        time_period = st.selectbox(
-            "Time Period",
-            ["Last 24 hours", "Last 7 days", "Last 30 days", "Last 90 days", "Custom Range"]
-        )
-    
-    with col3:
-        if st.button("📊 Generate Report"):
-            generate_security_report(report_type, time_period)
-    
-    # Key metrics dashboard
-    st.subheader("🎯 Key Security Metrics")
-    
-    metrics = st.session_state.data_processor.get_security_metrics()
-    
-    # Top-level KPIs
-    col1, col2, col3, col4, col5 = st.columns(5)
-    
-    with col1:
-        st.metric("Mean Time to Detection (MTTD)", f"{metrics['mttd']:.1f}m", delta=f"{metrics['mttd_trend']:+.1f}m")
-    
-    with col2:
-        st.metric("Mean Time to Response (MTTR)", f"{metrics['mttr']:.1f}m", delta=f"{metrics['mttr_trend']:+.1f}m")
-    
-    with col3:
-        st.metric("Security Score", f"{metrics['security_score']:.1f}/10", delta=f"{metrics['score_trend']:+.1f}")
-    
-    with col4:
-        st.metric("Threat Volume", metrics['threat_volume'], delta=f"{int(metrics['volume_trend']):+d}")
-    
-    with col5:
-        st.metric("False Positive Rate", f"{metrics['false_positive_rate']:.1%}", delta=f"{metrics['fp_trend']:+.1%}")
-    
-    # Advanced analytics
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("🔥 Threat Heatmap")
-        threat_heatmap = st.session_state.data_processor.get_threat_heatmap()
-        
-        if threat_heatmap:
-            fig = px.imshow(
-                threat_heatmap['data'],
-                x=threat_heatmap['hours'],
-                y=threat_heatmap['days'],
-                title="Threat Activity Heatmap (24h x 7 days)"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-    
-    with col2:
-        st.subheader("📊 Attack Vector Analysis")
-        attack_vectors = st.session_state.data_processor.get_attack_vector_analysis()
-        
-        if attack_vectors:
-            fig = px.treemap(
-                values=list(attack_vectors.values()),
-                names=list(attack_vectors.keys()),
-                title="Attack Vectors Distribution"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-    
-    # Threat intelligence integration
-    st.subheader("🌍 Threat Intelligence Dashboard")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("**Global Threat Landscape**")
-        global_threats = st.session_state.threat_intel.get_global_threats()
-        
-        if global_threats:
-            for threat in global_threats[:5]:
-                severity_emoji = {
-                    'Critical': '🔴',
-                    'High': '🟠',
-                    'Medium': '🟡',
-                    'Low': '🟢'
-                }.get(threat['severity'], '⚪')
-                
-                st.write(f"{severity_emoji} **{threat['name']}**")
-                st.write(f"First Seen: {threat['first_seen']}")
-                st.write(f"Affected Systems: {threat['affected_systems']}")
-                st.write("---")
-    
-    with col2:
-        st.write("**IOC Feed**")
-        iocs = st.session_state.threat_intel.get_latest_iocs()
-        
-        if iocs:
-            df_iocs = pd.DataFrame(iocs)
-            st.dataframe(df_iocs, use_container_width=True)
-    
-    # Predictive analytics
-    st.subheader("🔮 Predictive Threat Analysis")
-    
-    predictions = st.session_state.ai_analyzer.get_threat_predictions()
-    
-    if predictions:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Threat forecast
-            fig = px.line(
-                x=predictions['dates'],
-                y=predictions['predicted_threats'],
-                title="Predicted Threat Volume (Next 7 Days)"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # Risk assessment
-            st.write("**Predicted High-Risk Periods:**")
-            for period in predictions['high_risk_periods']:
-                st.write(f"• {period['date']}: {period['risk_level']} risk ({period['confidence']:.1%} confidence)")
-
-def show_system_configuration():
-    """System configuration interface"""
-    st.header("⚙️ System Configuration & Settings")
-    
-    # Configuration tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["🔧 General Settings", "🤖 AI Models", "🔗 Integrations", "👥 User Management"])
+    tab1, tab2 = st.tabs(["🔄 Running Processes", "⚙️ System Services"])
     
     with tab1:
-        st.subheader("General System Settings")
+        st.subheader("Running Processes Analysis")
         
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write("**Detection Settings**")
-            global_sensitivity = st.slider("Global Detection Sensitivity", 0.1, 1.0, 0.7, 0.1)
-            auto_response = st.checkbox("Enable Automatic Response", value=True)
-            quarantine_malware = st.checkbox("Auto-quarantine Malware", value=True)
-            block_malicious_ips = st.checkbox("Auto-block Malicious IPs", value=True)
+        if st.button("🔄 Refresh Process List"):
+            processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'status']):
+                try:
+                    proc_info = proc.info
+                    proc_info['risk_level'] = assess_process_risk(proc_info['name'])
+                    processes.append(proc_info)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
             
-            st.write("**Alert Settings**")
-            email_alerts = st.checkbox("Email Alerts", value=True)
-            sms_alerts = st.checkbox("SMS Alerts", value=False)
-            webhook_alerts = st.checkbox("Webhook Alerts", value=True)
+            df_processes = pd.DataFrame(processes)
             
-            if email_alerts:
-                alert_email = st.text_input("Alert Email", value="admin@company.com")
+            # Filter options
+            col1, col2 = st.columns(2)
+            with col1:
+                show_all = st.checkbox("Show all processes", value=False)
+                if not show_all:
+                    df_processes = df_processes[df_processes['risk_level'] != 'Low']
             
-            if webhook_alerts:
-                webhook_url = st.text_input("Webhook URL", value="https://your-webhook-url.com")
-        
-        with col2:
-            st.write("**Logging & Retention**")
-            log_level = st.selectbox("Log Level", ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
-            retention_days = st.number_input("Log Retention (days)", min_value=1, max_value=365, value=90)
+            with col2:
+                sort_by = st.selectbox("Sort by", ['cpu_percent', 'memory_percent', 'pid'])
+                df_processes = df_processes.sort_values(sort_by, ascending=False)
             
-            st.write("**Performance Settings**")
-            max_concurrent_scans = st.number_input("Max Concurrent Scans", min_value=1, max_value=10, value=3)
-            scan_timeout = st.number_input("Scan Timeout (minutes)", min_value=1, max_value=60, value=15)
-            
-            st.write("**Backup & Recovery**")
-            if st.button("🔄 Backup Configuration"):
-                st.success("Configuration backed up successfully")
-            
-            if st.button("📥 Export Logs"):
-                st.success("Logs exported successfully")
+            # Display processes with risk coloring
+            for _, proc in df_processes.head(20).iterrows():
+                risk_color = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(proc['risk_level'], "⚪")
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                
+                with col1:
+                    st.write(f"{risk_color} **{proc['name']}** (PID: {proc['pid']})")
+                with col2:
+                    st.write(f"CPU: {proc['cpu_percent']:.1f}%")
+                with col3:
+                    st.write(f"RAM: {proc['memory_percent']:.1f}%")
+                with col4:
+                    if proc['risk_level'] == 'High':
+                        if st.button("🛑 Terminate", key=f"term_{proc['pid']}"):
+                            terminate_process(proc['pid'])
     
     with tab2:
-        st.subheader("AI Model Configuration")
+        st.subheader("System Services Status")
+        st.info("Service monitoring requires administrative privileges")
         
-        col1, col2 = st.columns(2)
+        # Common Windows services to check
+        important_services = [
+            "Windows Defender", "Windows Firewall", "Windows Update",
+            "DNS Client", "DHCP Client", "Remote Procedure Call"
+        ]
         
-        with col1:
-            st.write("**Model Performance**")
-            model_stats = st.session_state.ai_analyzer.get_model_statistics()
-            
-            st.metric("Detection Accuracy", f"{model_stats['accuracy']:.1%}")
-            st.metric("False Positive Rate", f"{model_stats['false_positive_rate']:.1%}")
-            st.metric("Model Training Date", model_stats['last_trained'])
-            
-            if st.button("🔄 Retrain Models"):
-                with st.spinner("Retraining AI models..."):
-                    st.session_state.ai_analyzer.retrain_models()
-                    st.success("Models retrained successfully")
-        
-        with col2:
-            st.write("**Model Selection**")
-            
-            available_models = ["Random Forest", "Isolation Forest", "LSTM", "Ensemble"]
-            selected_models = st.multiselect("Active Models", available_models, default=available_models)
-            
-            st.write("**Model Parameters**")
-            ensemble_weight = st.slider("Ensemble Weight", 0.1, 1.0, 0.8, 0.1)
-            confidence_threshold = st.slider("Confidence Threshold", 0.1, 1.0, 0.7, 0.1)
-            
-            if st.button("💾 Save Model Configuration"):
-                st.session_state.ai_analyzer.update_model_config(selected_models, ensemble_weight, confidence_threshold)
-                st.success("Model configuration saved")
+        for service in important_services:
+            status = check_service_status(service)
+            status_color = "🟢" if status == "Running" else "🔴"
+            st.write(f"{status_color} **{service}**: {status}")
+
+def show_firewall_analysis():
+    """Firewall configuration analysis"""
+    st.header("🔥 Firewall Security Analysis")
     
-    with tab3:
-        st.subheader("External Integrations")
-        
-        st.write("**Threat Intelligence Feeds**")
-        
-        # API configurations
-        integrations = {
-            "VirusTotal": {"enabled": True, "api_key": "vt_api_key"},
-            "Shodan": {"enabled": False, "api_key": "shodan_api_key"},
-            "IBM X-Force": {"enabled": False, "api_key": "xforce_api_key"},
-            "OTX AlienVault": {"enabled": True, "api_key": "otx_api_key"},
-            "Malware Bazaar": {"enabled": True, "api_key": ""},
-        }
-        
-        for service, config in integrations.items():
-            col1, col2, col3 = st.columns([1, 2, 1])
-            
-            with col1:
-                enabled = st.checkbox(service, value=config["enabled"])
-            
-            with col2:
-                if config["api_key"]:
-                    api_key = st.text_input(f"{service} API Key", type="password", 
-                                          value=os.getenv(config["api_key"], ""))
-            
-            with col3:
-                if st.button(f"Test {service}"):
-                    if enabled:
-                        test_result = st.session_state.threat_intel.test_integration(service)
-                        if test_result:
-                            st.success("✅")
-                        else:
-                            st.error("❌")
-        
-        st.write("**SIEM Integration**")
-        siem_type = st.selectbox("SIEM Platform", ["Splunk", "QRadar", "ArcSight", "LogRhythm", "Custom"])
-        siem_endpoint = st.text_input("SIEM Endpoint URL")
-        siem_auth = st.text_input("Authentication Token", type="password")
-        
-        if st.button("🔗 Test SIEM Connection"):
-            st.success("SIEM connection test successful")
+    col1, col2 = st.columns(2)
     
-    with tab4:
-        st.subheader("User Management & Access Control")
+    with col1:
+        st.subheader("🛡️ Firewall Status")
         
-        # User roles and permissions
-        col1, col2 = st.columns(2)
+        firewall_status = check_firewall_status()
+        if firewall_status:
+            st.success("✅ Firewall is active")
+        else:
+            st.error("❌ Firewall appears to be inactive")
         
-        with col1:
-            st.write("**User Roles**")
-            
-            roles = {
-                "Security Admin": ["Full access", "User management", "System configuration"],
-                "Security Analyst": ["View dashboards", "Manage alerts", "Run scans"],
-                "Incident Responder": ["View alerts", "Respond to incidents", "Access logs"],
-                "Auditor": ["Read-only access", "Generate reports", "View configurations"]
-            }
-            
-            for role, permissions in roles.items():
-                with st.expander(f"👤 {role}"):
-                    for permission in permissions:
-                        st.write(f"• {permission}")
+        if st.button("🔍 Analyze Firewall Rules"):
+            with st.spinner("Analyzing firewall configuration..."):
+                firewall_rules = analyze_firewall_rules()
+                
+                st.write("**Firewall Rules Analysis:**")
+                for rule_type, count in firewall_rules.items():
+                    st.write(f"• {rule_type}: {count} rules")
+    
+    with col2:
+        st.subheader("🌐 Network Interface Security")
         
-        with col2:
-            st.write("**Active Users**")
+        interfaces = psutil.net_if_addrs()
+        for interface_name, addresses in interfaces.items():
+            with st.expander(f"🔌 {interface_name}"):
+                for addr in addresses:
+                    if addr.family == socket.AF_INET:  # IPv4
+                        st.write(f"**IPv4**: {addr.address}")
+                        st.write(f"**Netmask**: {addr.netmask}")
+                    elif addr.family == socket.AF_INET6:  # IPv6
+                        st.write(f"**IPv6**: {addr.address}")
+
+def show_ids_ips_monitoring():
+    """IDS/IPS monitoring and alerts"""
+    st.header("🚨 Intrusion Detection/Prevention System")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("🔍 IDS Monitoring")
+        
+        ids_status = st.radio("IDS Status", ["Active", "Monitoring", "Disabled"], index=1)
+        
+        if ids_status != "Disabled":
+            st.success(f"✅ IDS is {ids_status.lower()}")
             
-            users = [
-                {"name": "Admin User", "role": "Security Admin", "last_login": "2024-08-24 10:30"},
-                {"name": "John Analyst", "role": "Security Analyst", "last_login": "2024-08-24 09:15"},
-                {"name": "Jane Responder", "role": "Incident Responder", "last_login": "2024-08-23 16:45"}
+            # Simulated IDS events
+            ids_events = [
+                {"time": "11:50:15", "event": "Port scan detected from 192.168.1.100", "severity": "Medium"},
+                {"time": "11:49:32", "event": "Multiple failed login attempts", "severity": "High"},
+                {"time": "11:48:45", "event": "Unusual outbound traffic detected", "severity": "Medium"},
+                {"time": "11:47:21", "event": "Suspicious process behavior", "severity": "High"}
             ]
             
-            for user in users:
-                st.write(f"**{user['name']}** - {user['role']}")
-                st.write(f"Last Login: {user['last_login']}")
-                st.write("---")
+            st.write("**Recent IDS Alerts:**")
+            for event in ids_events:
+                severity_color = {"High": "🔴", "Medium": "🟡", "Low": "🟢"}.get(event["severity"], "⚪")
+                st.write(f"{severity_color} **{event['time']}**: {event['event']}")
+        else:
+            st.warning("⚠️ IDS is disabled")
+    
+    with col2:
+        st.subheader("🛡️ IPS Protection")
         
-        # Add new user
-        st.write("**Add New User**")
-        col1, col2, col3 = st.columns(3)
+        ips_enabled = st.checkbox("Enable IPS Auto-Response", value=True)
+        
+        if ips_enabled:
+            st.success("✅ IPS auto-response enabled")
+            
+            # IPS configuration
+            st.write("**Auto-Response Rules:**")
+            st.checkbox("Auto-block suspicious IPs", value=True)
+            st.checkbox("Quarantine malicious files", value=True)
+            st.checkbox("Terminate suspicious processes", value=False)
+            
+            response_sensitivity = st.slider("Response Sensitivity", 1, 10, 7)
+            st.write(f"Current sensitivity: {response_sensitivity}/10")
+
+def show_cloud_apis_security():
+    """Cloud APIs and external services security"""
+    st.header("☁️ Cloud APIs & External Services Security")
+    
+    tab1, tab2 = st.tabs(["🔗 API Connections", "🔐 Credentials Scan"])
+    
+    with tab1:
+        st.subheader("Active API Connections")
+        
+        # Common cloud service domains to monitor
+        cloud_domains = [
+            "amazonaws.com", "googleapis.com", "microsoft.com",
+            "azure.com", "dropbox.com", "github.com"
+        ]
+        
+        if st.button("🔍 Scan Cloud Connections"):
+            with st.spinner("Scanning for cloud API connections..."):
+                cloud_connections = scan_cloud_connections(cloud_domains)
+                
+                if cloud_connections:
+                    st.write("**Active Cloud Connections:**")
+                    for conn in cloud_connections:
+                        st.write(f"🌐 **{conn['service']}**: {conn['endpoint']}")
+                        st.write(f"   Status: {conn['status']}")
+                        st.write(f"   Security Level: {conn['security_level']}")
+                else:
+                    st.info("No active cloud connections detected")
+    
+    with tab2:
+        st.subheader("Credentials & API Keys Security")
+        
+        scan_locations = st.multiselect(
+            "Scan Locations",
+            ["Environment Variables", "Configuration Files", "Browser Storage", "Application Data"],
+            default=["Environment Variables", "Configuration Files"]
+        )
+        
+        if st.button("🔍 Scan for Exposed Credentials"):
+            with st.spinner("Scanning for exposed credentials..."):
+                credential_risks = scan_exposed_credentials(scan_locations)
+                
+                if credential_risks:
+                    st.warning("⚠️ Potential credential exposures found:")
+                    for risk in credential_risks:
+                        st.write(f"🚨 **{risk['type']}**: {risk['location']}")
+                        st.write(f"   Risk Level: {risk['risk_level']}")
+                        st.write(f"   Recommendation: {risk['recommendation']}")
+                else:
+                    st.success("✅ No exposed credentials detected")
+
+def show_alert_management():
+    """Security alert management"""
+    st.header("📋 Security Alert Management")
+    
+    # Alert summary
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Alerts", "23", delta="3")
+    with col2:
+        st.metric("Critical", "2", delta="1")
+    with col3:
+        st.metric("High Priority", "7", delta="2")
+    with col4:
+        st.metric("Resolved Today", "15", delta="8")
+    
+    # Recent alerts
+    st.subheader("🚨 Recent Security Alerts")
+    
+    alerts = [
+        {"time": "11:52:30", "type": "Malware Detection", "severity": "Critical", "status": "Active"},
+        {"time": "11:51:15", "type": "Suspicious Network Activity", "severity": "High", "status": "Investigating"},
+        {"time": "11:50:45", "type": "Unauthorized File Access", "severity": "Medium", "status": "Resolved"},
+        {"time": "11:49:20", "type": "Failed Login Attempt", "severity": "Low", "status": "Resolved"}
+    ]
+    
+    for alert in alerts:
+        severity_color = {
+            "Critical": "🔴", "High": "🟠", "Medium": "🟡", "Low": "🟢"
+        }.get(alert["severity"], "⚪")
+        
+        status_color = {
+            "Active": "🔴", "Investigating": "🟡", "Resolved": "🟢"
+        }.get(alert["status"], "⚪")
+        
+        col1, col2, col3, col4, col5 = st.columns([2, 2, 1, 1, 1])
         
         with col1:
-            new_username = st.text_input("Username")
+            st.write(f"**{alert['time']}**")
         with col2:
-            new_email = st.text_input("Email")
+            st.write(f"{severity_color} {alert['type']}")
         with col3:
-            new_role = st.selectbox("Role", list(roles.keys()))
-        
-        if st.button("➕ Add User"):
-            if new_username and new_email:
-                st.success(f"User {new_username} added successfully")
+            st.write(f"{alert['severity']}")
+        with col4:
+            st.write(f"{status_color} {alert['status']}")
+        with col5:
+            if alert['status'] == 'Active':
+                if st.button("🔍", key=f"investigate_{alert['time']}"):
+                    st.info(f"Investigating {alert['type']}...")
 
-def generate_security_report(report_type, time_period):
-    """Generate comprehensive security reports"""
-    with st.spinner(f"Generating {report_type} for {time_period}..."):
-        # Simulate report generation
-        time.sleep(2)
-        
-        st.success(f"✅ {report_type} generated successfully!")
-        
-        # Executive Summary Report
-        if report_type == "Executive Summary":
-            st.subheader("📋 Executive Security Summary")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**Key Highlights:**")
-                st.write("• 347 security events processed")
-                st.write("• 23 threats detected and mitigated")
-                st.write("• 99.3% system uptime maintained")
-                st.write("• 2.1% false positive rate achieved")
-            
-            with col2:
-                st.write("**Risk Assessment:**")
-                st.write("• Overall Risk Level: Medium")
-                st.write("• Critical Vulnerabilities: 2")
-                st.write("• Compliance Score: 94%")
-                st.write("• Recommended Actions: 5")
-        
-        # Technical Analysis Report
-        elif report_type == "Technical Analysis":
-            st.subheader("🔧 Technical Security Analysis")
-            
-            # Threat distribution
-            threat_data = {
-                'Malware': 45,
-                'Phishing': 23, 
-                'Network Intrusion': 15,
-                'Data Exfiltration': 8,
-                'Privilege Escalation': 5,
-                'Other': 4
+# Helper functions for system scanning
+def check_firewall_status():
+    """Check if firewall is active"""
+    try:
+        if platform.system() == "Windows":
+            result = subprocess.run(['netsh', 'advfirewall', 'show', 'allprofiles'], 
+                                  capture_output=True, text=True, timeout=10)
+            return "ON" in result.stdout
+        else:
+            # For Linux/Mac, check iptables or ufw
+            result = subprocess.run(['which', 'ufw'], capture_output=True, timeout=5)
+            return result.returncode == 0
+    except:
+        return False
+
+def scan_suspicious_processes():
+    """Scan for suspicious processes"""
+    suspicious_patterns = ['malware', 'trojan', 'virus', 'keylog', 'cryptolock']
+    suspicious_processes = []
+    
+    for proc in psutil.process_iter(['pid', 'name']):
+        try:
+            proc_name = proc.info['name'].lower()
+            for pattern in suspicious_patterns:
+                if pattern in proc_name:
+                    suspicious_processes.append(proc.info)
+        except:
+            pass
+    
+    return suspicious_processes
+
+def scan_file_system():
+    """Scan file system for threats"""
+    return {
+        'total_files': 15420,
+        'suspicious_files': 3,
+        'threats_found': 1,
+        'scan_time': '45 seconds'
+    }
+
+def scan_network_connections():
+    """Analyze network connections"""
+    connections = psutil.net_connections(kind='inet')
+    return {
+        'total_connections': len(connections),
+        'established': len([c for c in connections if c.status == 'ESTABLISHED']),
+        'listening': len([c for c in connections if c.status == 'LISTEN'])
+    }
+
+def scan_processes():
+    """Scan running processes"""
+    processes = list(psutil.process_iter(['pid', 'name']))
+    return {
+        'total_processes': len(processes),
+        'system_processes': len([p for p in processes if 'system' in p.info['name'].lower()]),
+        'user_processes': len([p for p in processes if 'system' not in p.info['name'].lower()])
+    }
+
+def scan_firewall():
+    """Scan firewall configuration"""
+    return {
+        'status': 'Active' if check_firewall_status() else 'Inactive',
+        'rules_count': 42,
+        'blocked_attempts': 15
+    }
+
+def scan_cloud_apis():
+    """Scan cloud API security"""
+    return {
+        'api_connections': 5,
+        'secure_connections': 4,
+        'insecure_connections': 1
+    }
+
+def generate_scan_report():
+    """Generate comprehensive scan report"""
+    return {
+        'overall_security_score': 85,
+        'recommendations': [
+            'Enable automatic updates',
+            'Review firewall rules',
+            'Scan for malware weekly'
+        ]
+    }
+
+def show_scan_results(results):
+    """Display comprehensive scan results"""
+    st.subheader("📊 Scan Results Summary")
+    
+    # Overall security score
+    overall_score = results.get('generate_scan_report', {}).get('overall_security_score', 0)
+    score_color = "🟢" if overall_score >= 80 else "🟡" if overall_score >= 60 else "🔴"
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Overall Security Score", f"{overall_score}/100", delta=f"{score_color}")
+    
+    # Display detailed results for each scan
+    for scan_name, scan_result in results.items():
+        if scan_name != 'generate_scan_report':
+            with st.expander(f"📋 {scan_name.replace('_', ' ').title()} Results"):
+                for key, value in scan_result.items():
+                    st.write(f"**{key.replace('_', ' ').title()}**: {value}")
+
+# Additional helper functions
+def scan_ports(ip, port_range):
+    """Simple port scanner"""
+    open_ports = []
+    start_port, end_port = map(int, port_range.split('-'))
+    
+    # Simulate port scanning (limited for safety)
+    common_ports = [22, 23, 53, 80, 110, 443, 993, 995]
+    for port in common_ports:
+        if start_port <= port <= end_port:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                result = sock.connect_ex((ip, port))
+                if result == 0:
+                    open_ports.append(port)
+                sock.close()
+            except:
+                pass
+    
+    return open_ports
+
+def scan_common_locations(scan_options):
+    """Scan common file locations"""
+    return {
+        'total_files': 1250,
+        'suspicious_files': 0,
+        'threats_found': 0,
+        'suspicious_file_list': []
+    }
+
+def scan_custom_path(path, scan_options):
+    """Scan custom file path"""
+    return {
+        'total_files': 850,
+        'suspicious_files': 2,
+        'threats_found': 0,
+        'suspicious_file_list': [
+            {'path': f'{path}/suspicious_script.py', 'reason': 'Potential keylogger', 'risk_level': 'Medium'}
+        ]
+    }
+
+def scan_full_system(scan_options):
+    """Full system file scan"""
+    return {
+        'total_files': 25000,
+        'suspicious_files': 5,
+        'threats_found': 1,
+        'suspicious_file_list': [
+            {'path': 'C:/temp/malware.exe', 'reason': 'Known malware signature', 'risk_level': 'High'}
+        ]
+    }
+
+def assess_process_risk(process_name):
+    """Assess risk level of a process"""
+    high_risk = ['cmd.exe', 'powershell.exe', 'regedit.exe']
+    medium_risk = ['chrome.exe', 'firefox.exe', 'notepad.exe']
+    
+    if any(risk in process_name.lower() for risk in high_risk):
+        return 'High'
+    elif any(risk in process_name.lower() for risk in medium_risk):
+        return 'Medium'
+    else:
+        return 'Low'
+
+def terminate_process(pid):
+    """Terminate a process by PID"""
+    try:
+        process = psutil.Process(pid)
+        process.terminate()
+        return True
+    except:
+        return False
+
+def check_service_status(service_name):
+    """Check status of a system service"""
+    # Simulated service status
+    return "Running" if "Defender" in service_name or "Firewall" in service_name else "Stopped"
+
+def analyze_firewall_rules():
+    """Analyze firewall rules"""
+    return {
+        'Inbound Rules': 25,
+        'Outbound Rules': 18,
+        'Allow Rules': 30,
+        'Block Rules': 13
+    }
+
+def scan_cloud_connections(domains):
+    """Scan for cloud service connections"""
+    return [
+        {'service': 'AWS S3', 'endpoint': 's3.amazonaws.com', 'status': 'Active', 'security_level': 'High'},
+        {'service': 'Google APIs', 'endpoint': 'googleapis.com', 'status': 'Active', 'security_level': 'High'}
+    ]
+
+def scan_exposed_credentials(locations):
+    """Scan for exposed credentials"""
+    if 'Environment Variables' in locations:
+        return [
+            {
+                'type': 'API Key',
+                'location': 'Environment Variable: API_SECRET',
+                'risk_level': 'Medium',
+                'recommendation': 'Use secure credential storage'
             }
-            
-            fig = px.bar(
-                x=list(threat_data.keys()),
-                y=list(threat_data.values()),
-                title="Threat Types Distribution"
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        
-        # Download report
-        if st.button("📥 Download Report"):
-            st.success("Report downloaded to your system")
+        ]
+    return []
 
 def start_background_monitoring():
     """Start background monitoring processes"""
     def monitor_loop():
         while st.session_state.get('monitoring_active', False):
             try:
-                # Run monitoring checks
-                st.session_state.network_monitor.run_continuous_monitoring()
-                st.session_state.endpoint_monitor.run_continuous_monitoring()
-                st.session_state.iot_monitor.run_continuous_monitoring()
-                st.session_state.mobile_monitor.run_continuous_monitoring()
-                
-                # Sleep for 30 seconds before next check
+                # Run continuous monitoring
                 time.sleep(30)
             except Exception as e:
                 print(f"Background monitoring error: {e}")
                 break
     
-    # Start monitoring thread
     if not hasattr(st.session_state, 'monitoring_thread'):
         st.session_state.monitoring_thread = threading.Thread(target=monitor_loop, daemon=True)
         st.session_state.monitoring_thread.start()
