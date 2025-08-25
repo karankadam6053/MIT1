@@ -1,9 +1,4 @@
-[project]
-name = "repl-nix-workspace"
-version = "0.1.0"
-description = "Add your description here"
-requires-python = ">=3.11"
-dependencies = [
+
     "ipaddress>=1.0.23",
     "joblib>=1.5.1",
     "numpy>=2.3.2",
@@ -15,4 +10,10 @@ dependencies = [
     "scikit-learn>=1.7.1",
     "streamlit>=1.48.1",
     "trafilatura>=2.0.0",
-]
+    "scikit-learn",
+    "pyshark",
+    "boto3",
+    "google-cloud-monitoring",
+    "azure-identity" ,
+    "azure-mgmt-security"
+
